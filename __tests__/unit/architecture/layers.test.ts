@@ -51,11 +51,15 @@ function presentationBypasses(graph: Map<string, SourceFile>): string[] {
     .map((p) => p.join(" → "));
 }
 
-/** Un composant client part dans le navigateur : il ne doit jamais atteindre la base. */
+/**
+ * Un composant client part dans le navigateur : il ne doit jamais atteindre la base.
+ * Seule exception : un fichier de Server Functions (`"use server"`), qui reste sur le serveur
+ * et n'est appelé qu'à distance.
+ */
 function clientReachesDatabase(graph: Map<string, SourceFile>): string[] {
   return [...graph.values()]
     .filter((n) => n.isClient)
-    .map((n) => findPathToDatabase(graph, n.file))
+    .map((n) => findPathToDatabase(graph, n.file, (f) => !f.isServerAction))
     .filter((p): p is string[] => p !== null)
     .map((p) => p.join(" → "));
 }
@@ -141,6 +145,13 @@ describe("les détecteurs repèrent bien les infractions", () => {
     write("src/lib/passe-plat.ts", `export * from "@/data/contacts";`);
     write("src/components/contournement.tsx", `import { db } from "@/lib/passe-plat";\nexport const z = db;`);
     write("src/components/client.tsx", `"use client";\nimport { list } from "@/services/contacts";\nexport const C = list;`);
+    // Composant client → Server Functions → service → données : autorisé
+    write("src/app/actions.ts", `"use server";
+import { list } from "@/services/contacts";
+export async function act() { return list(); }`);
+    write("src/components/client-action.tsx", `"use client";
+import { act } from "@/app/actions";
+export const A = act;`);
     write("src/services/vers-ui.ts", `import { X } from "@/components/relatif";\nimport { useState } from "react";\nexport const s = [X, useState];`);
     write("src/data/vers-service.ts", `import { list } from "@/services/contacts";\nexport const d = list;`);
     graph = scanProject(root);
@@ -171,6 +182,11 @@ describe("les détecteurs repèrent bien les infractions", () => {
     expect(clientReachesDatabase(graph)).toContain(
       "src/components/client.tsx → src/services/contacts.ts → src/data/contacts.ts",
     );
+  });
+
+  it("composant client qui passe par une Server Function (« use server ») : autorisé", () => {
+    expect(clientReachesDatabase(graph).join("\n")).not.toContain("src/components/client-action.tsx");
+    expect(presentationBypasses(graph).join("\n")).not.toContain("src/app/actions.ts");
   });
 
   it("dépendances vers le haut : service → présentation, données → service", () => {

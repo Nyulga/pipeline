@@ -17,7 +17,8 @@ CRM de prospection mono-utilisateur. L'intention du produit et les critères d'a
 
 ## Stack
 Next.js 16 (App Router), React 19, TypeScript strict, Tailwind 4, shadcn, Vitest, pnpm. Déploiement sur Vercel.
-Base retenue : libSQL en local, Turso en ligne (pas encore installée).
+Base : libSQL (`@libsql/client`). En local, fichier `pipeline.db` à la racine (ignoré par git) ; en ligne, Turso via `DATABASE_URL` et `DATABASE_AUTH_TOKEN`. Schéma et migrations dans `src/data/db.ts` (versionnées par `PRAGMA user_version`).
+Découpage en lots et critères d'acceptation : `lots.md`.
 
 - shadcn est configuré en style `base-nova` : les composants reposent sur `@base-ui/react`, **pas Radix**. Ajouter un composant : `pnpm shadcn add <nom>` (atterrit dans `src/components/ui`).
 - `cn` vient du paquet `cn` (`src/lib/utils.ts`), pas de `clsx` + `tailwind-merge`.
@@ -35,7 +36,8 @@ Défauts métier : un nouveau contact est « non appelé » et « en attente ».
 ## Tests
 Un seul `vitest.config.mts` avec deux projets Vitest (`unit`, `integration`), tous deux en environnement `node`.
 - Unitaires : `__tests__/unit/**/*.test.ts`. Les règles de suivi y sont testées.
-- Intégration : `__tests__/integration/**/*.test.ts`.
+- Intégration : `__tests__/integration/**/*.test.ts`. Base libSQL réelle dans un fichier temporaire : appeler `setupTestDatabase()` (`__tests__/integration/helpers/test-db.ts`) en tête de fichier.
+- Architecture : `__tests__/unit/architecture/layers.test.ts` vérifie la séparation des couches à partir des imports réels.
 - Seuls les fichiers `.test.ts` sont pris en compte (pas `.spec.ts`, pas `.tsx`).
 
 ## Commandes

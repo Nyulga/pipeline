@@ -18,6 +18,8 @@ export type SourceFile = {
   file: string;
   layer: Layer;
   isClient: boolean;
+  /** Fichier de Server Functions (`"use server"`) : appelé à distance, jamais embarqué côté client. */
+  isServerAction: boolean;
   /** Imports résolus vers un fichier de src/ (chemins relatifs à la racine). */
   internal: string[];
   /** Imports de paquets externes (ex. "react", "@libsql/client"). */
@@ -50,6 +52,12 @@ function resolveInternal(root: string, fromFile: string, spec: string): string |
   return hit ? toPosix(path.relative(root, hit)) : null;
 }
 
+/** Directive en tête de fichier (après d'éventuels commentaires). */
+function hasDirective(code: string, directive: string): boolean {
+  const leading = /^(\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*/.exec(code)?.[0].length ?? 0;
+  return new RegExp(`^["']${directive}["']`).test(code.slice(leading));
+}
+
 export function scanProject(root: string): Map<string, SourceFile> {
   const srcDir = path.join(root, "src");
   const files = (fs.readdirSync(srcDir, { recursive: true }) as string[])
@@ -63,7 +71,8 @@ export function scanProject(root: string): Map<string, SourceFile> {
     const entry: SourceFile = {
       file,
       layer: layerOf(file),
-      isClient: /^\s*(\/\/[^\n]*\n|\/\*[\s\S]*?\*\/|\s)*["']use client["']/.test(code),
+      isClient: hasDirective(code, "use client"),
+      isServerAction: hasDirective(code, "use server"),
       internal: [],
       external: [],
       unresolved: [],
