@@ -54,6 +54,25 @@ export async function insertContactRecord(input: NewContactRecord): Promise<Cont
   return toRecord(rows[0]);
 }
 
+export async function selectContactRecordById(id: string): Promise<ContactRecord | null> {
+  const db = await getDb();
+  const { rows } = await db.execute({ sql: `SELECT ${COLUMNS} FROM contacts WHERE id = ?`, args: [id] });
+  return rows[0] ? toRecord(rows[0] as Record<string, unknown>) : null;
+}
+
+/** Enregistre appelé + réponse. Renvoie null si le contact n'existe pas. */
+export async function updateContactTracking(
+  id: string,
+  tracking: { called: boolean; response: string },
+): Promise<ContactRecord | null> {
+  const db = await getDb();
+  const { rows } = await db.execute({
+    sql: `UPDATE contacts SET called = ?, response = ? WHERE id = ? RETURNING ${COLUMNS}`,
+    args: [tracking.called ? 1 : 0, tracking.response, id],
+  });
+  return rows[0] ? toRecord(rows[0] as Record<string, unknown>) : null;
+}
+
 /** Tous les contacts, du plus récent au plus ancien. */
 export async function selectContactRecords(): Promise<ContactRecord[]> {
   const db = await getDb();

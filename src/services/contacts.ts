@@ -1,22 +1,20 @@
 import {
   insertContactRecord,
+  selectContactRecordById,
   selectContactRecords,
+  updateContactTracking,
   type ContactRecord,
 } from "@/data/contacts-repository";
+import {
+  isContactResponse,
+  markCalled,
+  markNotCalled,
+  withResponse,
+  type Contact,
+  type Tracking,
+} from "@/services/tracking";
 
-export type ContactResponse = "accepte" | "refuse" | "enAttente";
-const RESPONSES: readonly ContactResponse[] = ["accepte", "refuse", "enAttente"];
-
-export type Contact = {
-  id: string;
-  name: string;
-  company: string | null;
-  phone: string | null;
-  email: string | null;
-  called: boolean;
-  response: ContactResponse;
-  createdAt: string;
-};
+export type { Contact, ContactResponse } from "@/services/tracking";
 
 export type ContactInput = {
   name?: string | null;
@@ -62,7 +60,7 @@ export function validateContactInput(
 }
 
 function toContact(r: ContactRecord): Contact {
-  if (!RESPONSES.includes(r.response as ContactResponse))
+  if (!isContactResponse(r.response))
     throw new Error(`Réponse inconnue en base pour le contact ${r.id} : ${r.response}`);
   return {
     id: r.id,
@@ -71,7 +69,7 @@ function toContact(r: ContactRecord): Contact {
     phone: r.phone,
     email: r.email,
     called: r.called === 1,
-    response: r.response as ContactResponse,
+    response: r.response,
     createdAt: r.created_at,
   };
 }
@@ -89,4 +87,26 @@ export async function addContact(input: ContactInput): Promise<AddContactResult>
 /** Tous les contacts, du plus récent au plus ancien. */
 export async function listContacts(): Promise<Contact[]> {
   return (await selectContactRecords()).map(toContact);
+}
+
+export type TrackingResult = { ok: true; contact: Contact } | { ok: false; error: string };
+
+/** Applique une règle de suivi au contact `id` et enregistre le résultat. */
+async function updateTracking(id: string, rule: (t: Tracking) => Tracking): Promise<TrackingResult> {
+  const record = await selectContactRecordById(id);
+  if (!record) return { ok: false, error: "Contact introuvable." };
+  const updated = await updateContactTracking(id, rule(toContact(record)));
+  if (!updated) return { ok: false, error: "Contact introuvable." };
+  return { ok: true, contact: toContact(updated) };
+}
+
+/** Marque le contact appelé ou non appelé (« non appelé » remet la réponse à « en attente »). */
+export function setCalled(id: string, called: boolean): Promise<TrackingResult> {
+  return updateTracking(id, called ? markCalled : markNotCalled);
+}
+
+/** Enregistre la réponse du contact (« accepté » ou « refusé » le marque aussi appelé). */
+export async function setResponse(id: string, response: unknown): Promise<TrackingResult> {
+  if (!isContactResponse(response)) return { ok: false, error: "Réponse inconnue." };
+  return updateTracking(id, (t) => withResponse(t, response));
 }
