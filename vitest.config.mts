@@ -9,7 +9,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          include: ["tests/unit/**/*.test.ts"],
+          include: ["__tests__/unit/**/*.test.ts"],
           environment: "node",
         },
       },
@@ -17,7 +17,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "integration",
-          include: ["tests/integration/**/*.test.ts"],
+          include: ["__tests__/integration/**/*.test.ts"],
           environment: "node",
         },
       },
