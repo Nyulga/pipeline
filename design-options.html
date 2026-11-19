@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline · Design systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Page shell (neutre, hors design systems) ---------- */
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f4f5; color: #18181b; font: 14px/1.5 system-ui, sans-serif; }
+  header.page { padding: 32px 16px 8px; max-width: 1440px; margin: 0 auto; }
+  header.page h1 { margin: 0 0 4px; font-size: 22px; }
+  header.page p { margin: 0; color: #52525b; max-width: 70ch; }
+  .grid { display: grid; gap: 20px; padding: 20px 16px 48px; max-width: 1440px; margin: 0 auto; grid-template-columns: 1fr; }
+  @media (min-width: 1100px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ---------- Option 1 · Ardoise ---------- */
+  .ds-ardoise {
+    --bg: oklch(0.985 0.002 247); --fg: oklch(0.21 0.03 265);
+    --card: oklch(1 0 0); --muted: oklch(0.967 0.003 265); --muted-fg: oklch(0.55 0.02 264);
+    --border: oklch(0.92 0.006 264); --input: oklch(0.92 0.006 264);
+    --primary: oklch(0.51 0.23 277); --primary-fg: oklch(0.985 0 0);
+    --secondary: oklch(0.955 0.015 277); --secondary-fg: oklch(0.36 0.14 277);
+    --accent: oklch(0.967 0.003 265); --destructive: oklch(0.577 0.215 27);
+    --ring: oklch(0.51 0.23 277);
+    --ok: oklch(0.52 0.13 155); --ok-bg: oklch(0.96 0.04 155);
+    --ko: oklch(0.55 0.2 27);  --ko-bg: oklch(0.96 0.03 27);
+    --wait: oklch(0.6 0.13 75); --wait-bg: oklch(0.97 0.05 85);
+    --called: oklch(0.51 0.23 277); --called-bg: oklch(0.955 0.03 277);
+    --radius: 0.5rem;
+    --font-head: "Inter", sans-serif; --font-body: "Inter", sans-serif; --font-mono: "JetBrains Mono", monospace;
+    --head-weight: 600; --head-tracking: -0.02em; --badge-radius: 6px; --btn-weight: 500;
+  }
+  /* ---------- Option 2 · Papier ---------- */
+  .ds-papier {
+    --bg: oklch(0.975 0.012 85); --fg: oklch(0.25 0.02 50);
+    --card: oklch(0.993 0.006 85); --muted: oklch(0.945 0.015 80); --muted-fg: oklch(0.5 0.025 60);
+    --border: oklch(0.88 0.02 75); --input: oklch(0.86 0.02 75);
+    --primary: oklch(0.56 0.15 40); --primary-fg: oklch(0.985 0.01 85);
+    --secondary: oklch(0.93 0.025 75); --secondary-fg: oklch(0.3 0.03 50);
+    --accent: oklch(0.945 0.015 80); --destructive: oklch(0.5 0.17 25);
+    --ring: oklch(0.56 0.15 40);
+    --ok: oklch(0.45 0.09 145); --ok-bg: oklch(0.93 0.04 140);
+    --ko: oklch(0.5 0.17 25);  --ko-bg: oklch(0.93 0.04 30);
+    --wait: oklch(0.5 0.08 80); --wait-bg: oklch(0.93 0.05 90);
+    --called: oklch(0.4 0.06 240); --called-bg: oklch(0.93 0.025 240);
+    --radius: 0.25rem;
+    --font-head: "Fraunces", serif; --font-body: "Source Sans 3", sans-serif; --font-mono: "IBM Plex Mono", monospace;
+    --head-weight: 600; --head-tracking: -0.01em; --badge-radius: 2px; --btn-weight: 600;
+  }
+  /* ---------- Option 3 · Signal ---------- */
+  .ds-signal {
+    --bg: oklch(0.17 0.01 260); --fg: oklch(0.96 0.005 260);
+    --card: oklch(0.215 0.012 260); --muted: oklch(0.26 0.012 260); --muted-fg: oklch(0.7 0.015 260);
+    --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 14%);
+    --primary: oklch(0.85 0.19 145); --primary-fg: oklch(0.2 0.04 150);
+    --secondary: oklch(0.28 0.012 260); --secondary-fg: oklch(0.96 0.005 260);
+    --accent: oklch(0.28 0.012 260); --destructive: oklch(0.68 0.2 22);
+    --ring: oklch(0.85 0.19 145);
+    --ok: oklch(0.85 0.19 145); --ok-bg: oklch(0.85 0.19 145 / 14%);
+    --ko: oklch(0.72 0.18 22);  --ko-bg: oklch(0.72 0.18 22 / 14%);
+    --wait: oklch(0.85 0.14 85); --wait-bg: oklch(0.85 0.14 85 / 14%);
+    --called: oklch(0.78 0.12 230); --called-bg: oklch(0.78 0.12 230 / 14%);
+    --radius: 0.875rem;
+    --font-head: "Space Grotesk", sans-serif; --font-body: "Space Grotesk", sans-serif; --font-mono: "IBM Plex Mono", monospace;
+    --head-weight: 600; --head-tracking: -0.025em; --badge-radius: 999px; --btn-weight: 600;
+  }
+
+  /* ---------- Composants, pilotés par les tokens ---------- */
+  .ds { background: var(--bg); color: var(--fg); font-family: var(--font-body); border-radius: 14px; padding: 24px; border: 1px solid rgb(0 0 0 / 8%); min-width: 0; }
+  .ds h2, .ds h3, .ds .h { font-family: var(--font-head); font-weight: var(--head-weight); letter-spacing: var(--head-tracking); margin: 0; }
+  .ds h2 { font-size: 28px; line-height: 1.1; }
+  .ds .tagline { color: var(--muted-fg); margin: 6px 0 0; }
+  .ds section { margin-top: 28px; }
+  .ds .label { font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-fg); margin-bottom: 12px; display: block; }
+
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .sw { min-width: 0; }
+  .sw i { display: block; height: 40px; border-radius: calc(var(--radius) * 0.8); border: 1px solid var(--border); }
+  .sw b { display: block; font: 500 11px/1.3 var(--font-mono); margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sw small { display: block; font: 10px/1.3 var(--font-mono); color: var(--muted-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .type > div { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px dashed var(--border); padding: 6px 0; }
+  .type > div span:first-child { font: 10px var(--font-mono); color: var(--muted-fg); width: 56px; flex: none; }
+  .type .t1 { font-family: var(--font-head); font-weight: var(--head-weight); letter-spacing: var(--head-tracking); font-size: 24px; }
+  .type .t2 { font-family: var(--font-head); font-weight: var(--head-weight); letter-spacing: var(--head-tracking); font-size: 18px; }
+  .type .t3 { font-size: 14px; }
+  .type .t4 { font-size: 12px; color: var(--muted-fg); }
+  .type .t5 { font: 13px var(--font-mono); }
+  .fonts { font: 11px/1.5 var(--font-mono); color: var(--muted-fg); margin-top: 10px; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn { font: var(--btn-weight) 14px/1 var(--font-body); height: 36px; padding: 0 14px; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: filter .15s, background .15s; }
+  .btn:focus-visible { outline: 3px solid color-mix(in oklch, var(--ring) 45%, transparent); outline-offset: 1px; }
+  .btn-primary { background: var(--primary); color: var(--primary-fg); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-secondary { background: var(--secondary); color: var(--secondary-fg); }
+  .btn-outline { background: var(--card); color: var(--fg); border-color: var(--input); }
+  .btn-outline:hover, .btn-ghost:hover { background: var(--accent); }
+  .btn-ghost { background: transparent; color: var(--fg); }
+  .btn-destructive { background: color-mix(in oklch, var(--destructive) 12%, transparent); color: var(--destructive); }
+  .btn-sm { height: 30px; padding: 0 10px; font-size: 13px; }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+  .field { display: grid; gap: 6px; margin-bottom: 12px; }
+  .field label { font-size: 13px; font-weight: 500; }
+  .field .hint { font-size: 12px; color: var(--muted-fg); }
+  .field .err { font-size: 12px; color: var(--destructive); }
+  .input { font: 14px var(--font-body); height: 36px; padding: 0 12px; border-radius: var(--radius); border: 1px solid var(--input); background: var(--card); color: var(--fg); width: 100%; }
+  .input::placeholder { color: var(--muted-fg); }
+  .input:focus, .input.is-focus { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 25%, transparent); }
+  .input.is-error { border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 18%, transparent); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .badge { font: 500 12px/1 var(--font-body); padding: 5px 8px; border-radius: var(--badge-radius); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .b-ok { color: var(--ok); background: var(--ok-bg); }
+  .b-ko { color: var(--ko); background: var(--ko-bg); }
+  .b-wait { color: var(--wait); background: var(--wait-bg); }
+  .b-called { color: var(--called); background: var(--called-bg); }
+  .b-none { color: var(--muted-fg); background: var(--muted); }
+
+  .contact { background: var(--card); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.4); padding: 16px; margin-bottom: 12px; }
+  .contact .top { display: flex; gap: 12px; align-items: flex-start; }
+  .avatar { width: 40px; height: 40px; flex: none; border-radius: var(--badge-radius); background: var(--secondary); color: var(--secondary-fg); display: grid; place-items: center; font: 600 14px var(--font-head); }
+  .ds-ardoise .avatar { border-radius: 8px; }
+  .contact .who { flex: 1; min-width: 0; }
+  .contact .who .h { font-size: 16px; }
+  .contact .who p { margin: 2px 0 0; color: var(--muted-fg); font-size: 13px; }
+  .contact .meta { font: 12px/1.7 var(--font-mono); color: var(--muted-fg); margin: 12px 0; }
+  .contact .status { display: flex; gap: 6px; flex-wrap: wrap; }
+  .contact .actions { display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--input); border-radius: var(--radius); overflow: hidden; }
+  .seg button { font: 500 12px/1 var(--font-body); border: 0; background: transparent; color: var(--muted-fg); padding: 0 10px; height: 28px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--input); }
+  .seg button[aria-pressed="true"] { background: var(--primary); color: var(--primary-fg); }
+  .pitch { margin-top: 16px; font-size: 13px; color: var(--muted-fg); border-left: 3px solid var(--primary); padding-left: 10px; }
+</style>
+</head>
+<body>
+<header class="page">
+  <h1>Pipeline · trois design systems</h1>
+  <p>Chaque colonne est autonome et pilotée par ses propres tokens, qui correspondent un à un aux variables du thème shadcn (<code>--primary</code>, <code>--border</code>, <code>--radius</code>…). Les badges de suivi (appelé / non appelé ; accepté / refusé / en attente) ajoutent quatre tokens de statut.</p>
+</header>
+
+<main class="grid">
+<!-- =============================== 1 · ARDOISE =============================== -->
+<article class="ds ds-ardoise">
+  <span class="label">Option 1</span>
+  <h2>Ardoise</h2>
+  <p class="tagline">Outil de travail sobre et dense. Gris bleutés, un indigo franc pour l'action. Inspiré des apps de productivité.</p>
+
+  <section>
+    <span class="label">Couleurs</span>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--bg)"></i><b>background</b><small>0.985 0.002 247</small></div>
+      <div class="sw"><i style="background:var(--fg)"></i><b>foreground</b><small>0.21 0.03 265</small></div>
+      <div class="sw"><i style="background:var(--primary)"></i><b>primary</b><small>0.51 0.23 277</small></div>
+      <div class="sw"><i style="background:var(--secondary)"></i><b>secondary</b><small>0.955 0.015 277</small></div>
+      <div class="sw"><i style="background:var(--muted)"></i><b>muted</b><small>0.967 0.003 265</small></div>
+      <div class="sw"><i style="background:var(--border)"></i><b>border</b><small>0.92 0.006 264</small></div>
+      <div class="sw"><i style="background:var(--destructive)"></i><b>destructive</b><small>0.577 0.215 27</small></div>
+      <div class="sw"><i style="background:var(--ok)"></i><b>accepté</b><small>0.52 0.13 155</small></div>
+    </div>
+  </section>
+
+  <section class="type">
+    <span class="label">Typographie</span>
+    <div><span>Titre</span><span class="t1">Mes contacts</span></div>
+    <div><span>Sous-titre</span><span class="t2">Claire Martin</span></div>
+    <div><span>Corps</span><span class="t3">Rappeler après la démo de jeudi.</span></div>
+    <div><span>Légende</span><span class="t4">Ajouté le 12 nov.</span></div>
+    <div><span>Données</span><span class="t5">06 12 34 56 78</span></div>
+    <p class="fonts">Inter 400/500/600 · JetBrains Mono · rayon 8px</p>
+  </section>
+
+  <section>
+    <span class="label">Boutons</span>
+    <div class="row">
+      <button class="btn btn-primary">Ajouter un contact</button>
+      <button class="btn btn-secondary">Secondaire</button>
+      <button class="btn btn-outline">Contour</button>
+      <button class="btn btn-ghost">Fantôme</button>
+      <button class="btn btn-destructive">Supprimer</button>
+      <button class="btn btn-primary" disabled>Désactivé</button>
+    </div>
+  </section>
+
+  <section>
+    <span class="label">Champs</span>
+    <div class="two">
+      <div class="field"><label>Nom</label><input class="input" placeholder="Claire Martin"></div>
+      <div class="field"><label>Entreprise</label><input class="input is-focus" value="Atelier Nord"></div>
+    </div>
+    <div class="field"><label>Téléphone</label><input class="input is-error" value="06 12"><span class="err">Numéro incomplet.</span></div>
+  </section>
+
+  <section>
+    <span class="label">Carte de contact</span>
+    <div class="contact">
+      <div class="top"><div class="avatar">CM</div><div class="who"><div class="h">Claire Martin</div><p>Directrice · Atelier Nord</p></div></div>
+      <div class="meta">06 12 34 56 78<br>claire@ateliernord.fr</div>
+      <div class="status"><span class="badge b-called">Appelé</span><span class="badge b-ok">Accepté</span></div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm">Marquer non appelé</button>
+        <div class="seg"><button aria-pressed="true">Accepté</button><button>Refusé</button><button>En attente</button></div>
+      </div>
+    </div>
+    <div class="contact">
+      <div class="top"><div class="avatar">TB</div><div class="who"><div class="h">Thomas Bernard</div><p>Gérant · Boulangerie du Port</p></div></div>
+      <div class="status" style="margin-top:12px"><span class="badge b-none">Non appelé</span><span class="badge b-wait">En attente</span><span class="badge b-ko">Refusé</span></div>
+    </div>
+  </section>
+  <p class="pitch">Pour : lisibilité maximale, se fond dans les défauts shadcn. Contre : peu de personnalité.</p>
+</article>
+
+<!-- =============================== 2 · PAPIER =============================== -->
+<article class="ds ds-papier">
+  <span class="label">Option 2</span>
+  <h2>Papier</h2>
+  <p class="tagline">Carnet de prospection chaleureux. Fond crème, encre brune, terracotta pour l'action, titres à empattements.</p>
+
+  <section>
+    <span class="label">Couleurs</span>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--bg)"></i><b>background</b><small>0.975 0.012 85</small></div>
+      <div class="sw"><i style="background:var(--fg)"></i><b>foreground</b><small>0.25 0.02 50</small></div>
+      <div class="sw"><i style="background:var(--primary)"></i><b>primary</b><small>0.56 0.15 40</small></div>
+      <div class="sw"><i style="background:var(--secondary)"></i><b>secondary</b><small>0.93 0.025 75</small></div>
+      <div class="sw"><i style="background:var(--muted)"></i><b>muted</b><small>0.945 0.015 80</small></div>
+      <div class="sw"><i style="background:var(--border)"></i><b>border</b><small>0.88 0.02 75</small></div>
+      <div class="sw"><i style="background:var(--destructive)"></i><b>destructive</b><small>0.5 0.17 25</small></div>
+      <div class="sw"><i style="background:var(--ok)"></i><b>accepté</b><small>0.45 0.09 145</small></div>
+    </div>
+  </section>
+
+  <section class="type">
+    <span class="label">Typographie</span>
+    <div><span>Titre</span><span class="t1">Mes contacts</span></div>
+    <div><span>Sous-titre</span><span class="t2">Claire Martin</span></div>
+    <div><span>Corps</span><span class="t3">Rappeler après la démo de jeudi.</span></div>
+    <div><span>Légende</span><span class="t4">Ajouté le 12 nov.</span></div>
+    <div><span>Données</span><span class="t5">06 12 34 56 78</span></div>
+    <p class="fonts">Fraunces 600 · Source Sans 3 · IBM Plex Mono · rayon 4px</p>
+  </section>
+
+  <section>
+    <span class="label">Boutons</span>
+    <div class="row">
+      <button class="btn btn-primary">Ajouter un contact</button>
+      <button class="btn btn-secondary">Secondaire</button>
+      <button class="btn btn-outline">Contour</button>
+      <button class="btn btn-ghost">Fantôme</button>
+      <button class="btn btn-destructive">Supprimer</button>
+      <button class="btn btn-primary" disabled>Désactivé</button>
+    </div>
+  </section>
+
+  <section>
+    <span class="label">Champs</span>
+    <div class="two">
+      <div class="field"><label>Nom</label><input class="input" placeholder="Claire Martin"></div>
+      <div class="field"><label>Entreprise</label><input class="input is-focus" value="Atelier Nord"></div>
+    </div>
+    <div class="field"><label>Téléphone</label><input class="input is-error" value="06 12"><span class="err">Numéro incomplet.</span></div>
+  </section>
+
+  <section>
+    <span class="label">Carte de contact</span>
+    <div class="contact">
+      <div class="top"><div class="avatar">CM</div><div class="who"><div class="h">Claire Martin</div><p>Directrice · Atelier Nord</p></div></div>
+      <div class="meta">06 12 34 56 78<br>claire@ateliernord.fr</div>
+      <div class="status"><span class="badge b-called">Appelé</span><span class="badge b-ok">Accepté</span></div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm">Marquer non appelé</button>
+        <div class="seg"><button aria-pressed="true">Accepté</button><button>Refusé</button><button>En attente</button></div>
+      </div>
+    </div>
+    <div class="contact">
+      <div class="top"><div class="avatar">TB</div><div class="who"><div class="h">Thomas Bernard</div><p>Gérant · Boulangerie du Port</p></div></div>
+      <div class="status" style="margin-top:12px"><span class="badge b-none">Non appelé</span><span class="badge b-wait">En attente</span><span class="badge b-ko">Refusé</span></div>
+    </div>
+  </section>
+  <p class="pitch">Pour : identité forte, agréable à utiliser au quotidien. Contre : 3 polices à charger, moins « outil ».</p>
+</article>
+
+<!-- =============================== 3 · SIGNAL =============================== -->
+<article class="ds ds-signal">
+  <span class="label">Option 3</span>
+  <h2>Signal</h2>
+  <p class="tagline">Tableau de bord sombre, contrasté. Vert néon pour l'action, statuts lumineux sur fond translucide, formes arrondies.</p>
+
+  <section>
+    <span class="label">Couleurs</span>
+    <div class="swatches">
+      <div class="sw"><i style="background:var(--bg)"></i><b>background</b><small>0.17 0.01 260</small></div>
+      <div class="sw"><i style="background:var(--fg)"></i><b>foreground</b><small>0.96 0.005 260</small></div>
+      <div class="sw"><i style="background:var(--primary)"></i><b>primary</b><small>0.85 0.19 145</small></div>
+      <div class="sw"><i style="background:var(--secondary)"></i><b>secondary</b><small>0.28 0.012 260</small></div>
+      <div class="sw"><i style="background:var(--card)"></i><b>card</b><small>0.215 0.012 260</small></div>
+      <div class="sw"><i style="background:var(--border)"></i><b>border</b><small>blanc / 10%</small></div>
+      <div class="sw"><i style="background:var(--destructive)"></i><b>destructive</b><small>0.68 0.2 22</small></div>
+      <div class="sw"><i style="background:var(--called)"></i><b>appelé</b><small>0.78 0.12 230</small></div>
+    </div>
+  </section>
+
+  <section class="type">
+    <span class="label">Typographie</span>
+    <div><span>Titre</span><span class="t1">Mes contacts</span></div>
+    <div><span>Sous-titre</span><span class="t2">Claire Martin</span></div>
+    <div><span>Corps</span><span class="t3">Rappeler après la démo de jeudi.</span></div>
+    <div><span>Légende</span><span class="t4">Ajouté le 12 nov.</span></div>
+    <div><span>Données</span><span class="t5">06 12 34 56 78</span></div>
+    <p class="fonts">Space Grotesk 400/600 · IBM Plex Mono · rayon 14px, badges pilule</p>
+  </section>
+
+  <section>
+    <span class="label">Boutons</span>
+    <div class="row">
+      <button class="btn btn-primary">Ajouter un contact</button>
+      <button class="btn btn-secondary">Secondaire</button>
+      <button class="btn btn-outline">Contour</button>
+      <button class="btn btn-ghost">Fantôme</button>
+      <button class="btn btn-destructive">Supprimer</button>
+      <button class="btn btn-primary" disabled>Désactivé</button>
+    </div>
+  </section>
+
+  <section>
+    <span class="label">Champs</span>
+    <div class="two">
+      <div class="field"><label>Nom</label><input class="input" placeholder="Claire Martin"></div>
+      <div class="field"><label>Entreprise</label><input class="input is-focus" value="Atelier Nord"></div>
+    </div>
+    <div class="field"><label>Téléphone</label><input class="input is-error" value="06 12"><span class="err">Numéro incomplet.</span></div>
+  </section>
+
+  <section>
+    <span class="label">Carte de contact</span>
+    <div class="contact">
+      <div class="top"><div class="avatar">CM</div><div class="who"><div class="h">Claire Martin</div><p>Directrice · Atelier Nord</p></div></div>
+      <div class="meta">06 12 34 56 78<br>claire@ateliernord.fr</div>
+      <div class="status"><span class="badge b-called">Appelé</span><span class="badge b-ok">Accepté</span></div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm">Marquer non appelé</button>
+        <div class="seg"><button aria-pressed="true">Accepté</button><button>Refusé</button><button>En attente</button></div>
+      </div>
+    </div>
+    <div class="contact">
+      <div class="top"><div class="avatar">TB</div><div class="who"><div class="h">Thomas Bernard</div><p>Gérant · Boulangerie du Port</p></div></div>
+      <div class="status" style="margin-top:12px"><span class="badge b-none">Non appelé</span><span class="badge b-wait">En attente</span><span class="badge b-ko">Refusé</span></div>
+    </div>
+  </section>
+  <p class="pitch">Pour : statuts qui sautent aux yeux, look moderne. Contre : thème sombre par défaut (une variante claire serait à dériver).</p>
+</article>
+</main>
+</body>
+</html>
