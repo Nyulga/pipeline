@@ -29,6 +29,7 @@ import {
   addContact,
   getContact,
   listContacts,
+  listContactsForExport,
   listDueFollowUps,
   searchContacts,
   setFollowUp,
@@ -293,5 +294,20 @@ describe("searchContacts (lot 4)", () => {
     vi.mocked(selectContactRecords).mockResolvedValue([record()]);
     expect(await searchContacts("")).toHaveLength(1);
     expect(selectAllNoteRecords).not.toHaveBeenCalled();
+  });
+});
+
+describe("listContactsForExport (lot 5)", () => {
+  it("chaque contact avec sa note la plus récente, ou null", async () => {
+    vi.mocked(selectContactRecords).mockResolvedValue([record({ id: "a" }), record({ id: "b" })]);
+    // La base rend les notes des plus récentes aux plus anciennes.
+    vi.mocked(selectAllNoteRecords).mockResolvedValue([
+      { id: "n2", contact_id: "a", body: "Dernière", created_at: "2026-11-21T10:00:00.000Z" },
+      { id: "n1", contact_id: "a", body: "Première", created_at: "2026-11-20T10:00:00.000Z" },
+    ]);
+    expect((await listContactsForExport()).map((r) => [r.contact.id, r.lastNote])).toEqual([
+      ["a", "Dernière"],
+      ["b", null],
+    ]);
   });
 });

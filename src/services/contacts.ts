@@ -25,6 +25,7 @@ export {
   type ContactResponse,
 } from "@/services/contact-model";
 export type { DueFollowUp, FollowUpState } from "@/services/follow-up";
+export { exportFileName, toCsv } from "@/services/csv";
 
 export type ContactInput = Partial<Record<ContactField, string | null>>;
 export type ContactErrors = Partial<Record<ContactField, string>>;
@@ -113,6 +114,17 @@ export async function searchContacts(query: string): Promise<Contact[]> {
     notesByContact.set(n.contact_id, list);
   }
   return contacts.filter((c) => matchesSearch(c, notesByContact.get(c.id) ?? [], query));
+}
+
+export type ContactExportRow = { contact: Contact; lastNote: string | null };
+
+/** Tous les contacts (du plus récent au plus ancien), chacun avec sa note la plus récente. */
+export async function listContactsForExport(): Promise<ContactExportRow[]> {
+  const [contacts, notes] = await Promise.all([listContacts(), selectAllNoteRecords()]);
+  const lastNote = new Map<string, string>();
+  // Les notes arrivent des plus récentes aux plus anciennes : la première vue est la dernière écrite.
+  for (const n of notes) if (!lastNote.has(n.contact_id)) lastNote.set(n.contact_id, n.body);
+  return contacts.map((contact) => ({ contact, lastNote: lastNote.get(contact.id) ?? null }));
 }
 
 export type TrackingResult = { ok: true; contact: Contact } | { ok: false; error: string };

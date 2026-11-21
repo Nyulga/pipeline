@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-list";
 import { ContactSearch } from "@/components/contacts/contact-search";
+import { ExportButton } from "@/components/contacts/export-button";
 import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
 
 type SearchParams = Promise<{ q?: string | string[] }>;
@@ -19,7 +20,10 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Pipeline</p>
           <h1 className="text-4xl font-semibold tracking-tight">Mes contacts</h1>
         </div>
-        <AddContactDialog />
+        <div className="flex flex-wrap gap-2">
+          <ExportButton />
+          <AddContactDialog />
+        </div>
       </header>
 
       <Suspense fallback={<DueFollowUpsSkeleton />}>
