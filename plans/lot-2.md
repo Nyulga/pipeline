@@ -63,3 +63,11 @@ L'étape d'un contact se déduit de *appelé* + *réponse* : À appeler · Appel
 2. Un contact appelé ou refusé, remis « en attente », reste appelé, à l'étape « Appelé · en attente ».
 3. « Visible dans la liste » est prouvé par des tests de composants (jsdom) et par des tests sur une vraie base, pas par un test dans un vrai navigateur.
 4. Hors lot, signalé mais pas codé : faire respecter « accepté ou refusé ⇒ appelé » par la base, avec un trigger. Ce serait une règle métier dans la couche données.
+
+## Correctifs après revue (PR #7, commit `fix(lot-2)`)
+- Si une action serveur échoue (réseau, base injoignable), la page ne plante plus : la carte affiche « Impossible d'enregistrer, réessaie. ». `src/app/error.tsx` sert de filet de sécurité.
+- « Annuler l'appel » remplace « Non appelé ». Le bouton est désactivé tant que le contact a une réponse, avec l'explication « Remets d'abord la réponse « En attente ». » (règle pure `canCancelCall`). Le service garde la règle « non appelé ⇒ en attente ».
+- La carte montre l'étape dans un seul badge (`StageBadge`). En vue « Par étape », la colonne l'indique déjà.
+- Les libellés et les couleurs des étapes sont dans `src/components/status-badge.tsx`. `STAGES` ne garde que l'ordre.
+- `src/services/contact-model.ts`, sans accès à la base, regroupe `Contact`, `ContactResponse`, `RESPONSES`, `isContactResponse` et `CONTACT_FIELDS`.
+- Le service vérifie « appelé » comme il vérifie la réponse (« État d'appel inconnu. »).
