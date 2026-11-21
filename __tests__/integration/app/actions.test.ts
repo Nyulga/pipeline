@@ -6,7 +6,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
 import { addContactAction, setCalledAction, setResponseAction } from "@/app/actions";
-import { listContacts } from "@/services/contacts";
+import { CONTACT_FIELDS, listContacts } from "@/services/contacts";
 
 setupTestDatabase();
 
@@ -22,6 +22,14 @@ describe("addContactAction (formulaire → service → base)", () => {
     expect(r).toEqual({ ok: true, errors: {} });
     expect(revalidatePath).toHaveBeenCalledWith("/");
     expect((await listContacts()).map((c) => c.name)).toContain("Camille Roux");
+  });
+
+  it("lit chacun des champs du formulaire (CONTACT_FIELDS)", async () => {
+    const values = { name: "Inès Faure", company: "Studio Ligne", phone: "07 11 22 33 44", email: "ines@studioligne.fr" };
+    const fd = new FormData();
+    for (const f of CONTACT_FIELDS) fd.set(f, values[f]);
+    expect((await addContactAction(fd)).ok).toBe(true);
+    expect((await listContacts()).find((c) => c.name === values.name)).toMatchObject(values);
   });
 
   it("renvoie les erreurs par champ sans rien écrire", async () => {

@@ -38,6 +38,15 @@ describe("contacts-repository (libSQL réel)", () => {
     await expect(insertContactRecord({ ...base, name: "X", response: "peut-etre" })).rejects.toThrow();
   });
 
+  it("refuse un nom vide ou fait d'espaces (contrainte de la table)", async () => {
+    await expect(insertContactRecord({ ...base, name: "" })).rejects.toThrow();
+    await expect(insertContactRecord({ ...base, name: "   " })).rejects.toThrow();
+    await expect(insertContactRecord({ ...base, name: "\t\n \r" })).rejects.toThrow();
+    const c = await insertContactRecord({ ...base, name: "Nom valide" });
+    const db = await getDb();
+    await expect(db.execute({ sql: "UPDATE contacts SET name = '' WHERE id = ?", args: [c.id] })).rejects.toThrow();
+  });
+
   it("conserve les contacts après fermeture et réouverture de la base", async () => {
     await insertContactRecord({ ...base, name: "Persistant" });
     await closeDb();

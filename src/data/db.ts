@@ -20,6 +20,18 @@ const MIGRATIONS: string[][] = [
     )`,
     `CREATE INDEX IF NOT EXISTS contacts_created_at ON contacts (created_at)`,
   ],
+  // 2 · un nom ne peut pas être vide ni fait d'espaces (SQLite n'ajoute pas de CHECK
+  // à une table existante : des triggers évitent de la reconstruire).
+  [
+    `CREATE TRIGGER IF NOT EXISTS contacts_name_not_blank_insert
+     BEFORE INSERT ON contacts
+     WHEN trim(NEW.name, ' ' || char(9, 10, 13)) = ''
+     BEGIN SELECT RAISE(ABORT, 'contacts.name ne peut pas être vide'); END`,
+    `CREATE TRIGGER IF NOT EXISTS contacts_name_not_blank_update
+     BEFORE UPDATE OF name ON contacts
+     WHEN trim(NEW.name, ' ' || char(9, 10, 13)) = ''
+     BEGIN SELECT RAISE(ABORT, 'contacts.name ne peut pas être vide'); END`,
+  ],
 ];
 
 async function migrate(db: Client) {

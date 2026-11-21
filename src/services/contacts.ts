@@ -14,21 +14,17 @@ import {
   type Tracking,
 } from "@/services/tracking";
 
+import { CONTACT_FIELDS, type ContactField } from "@/services/contact-fields";
+
 export type { Contact, ContactResponse } from "@/services/tracking";
+export { CONTACT_FIELDS, type ContactField } from "@/services/contact-fields";
 
-export type ContactInput = {
-  name?: string | null;
-  company?: string | null;
-  phone?: string | null;
-  email?: string | null;
-};
-
-export type ContactField = "name" | "company" | "phone" | "email";
+export type ContactInput = Partial<Record<ContactField, string | null>>;
 export type ContactErrors = Partial<Record<ContactField, string>>;
 
 type CleanInput = { name: string; company: string | null; phone: string | null; email: string | null };
 
-const MAX = { name: 120, company: 120, phone: 40, email: 254 } as const;
+const MAX: Record<ContactField, number> = { name: 120, company: 120, phone: 40, email: 254 };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const clean = (v: string | null | undefined) => {
@@ -48,7 +44,7 @@ export function validateContactInput(
   const errors: ContactErrors = {};
 
   if (!value.name) errors.name = "Le nom est obligatoire.";
-  for (const field of Object.keys(MAX) as ContactField[]) {
+  for (const field of CONTACT_FIELDS) {
     const v = value[field];
     if (!errors[field] && v && v.length > MAX[field])
       errors[field] = `${MAX[field]} caractères maximum.`;

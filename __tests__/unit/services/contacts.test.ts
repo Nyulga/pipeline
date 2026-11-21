@@ -16,6 +16,7 @@ import {
   updateContactTracking,
 } from "@/data/contacts-repository";
 import {
+  CONTACT_FIELDS,
   addContact,
   listContacts,
   setCalled,
@@ -75,6 +76,19 @@ describe("validateContactInput", () => {
     const r = validateContactInput({ name: "", email: "pas-un-mail" });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["email", "name"]);
+  });
+});
+
+describe("CONTACT_FIELDS : les champs du formulaire, définis une seule fois", () => {
+  it("chaque erreur porte le nom d'un de ces champs", () => {
+    const r = validateContactInput({
+      name: "",
+      company: "c".repeat(121),
+      phone: "1".repeat(41),
+      email: "pas-un-mail",
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual([...CONTACT_FIELDS].sort());
   });
 });
 

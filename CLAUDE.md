@@ -38,6 +38,7 @@ Un seul `vitest.config.mts` avec deux projets Vitest (`unit`, `integration`), to
 - Unitaires : `__tests__/unit/**/*.test.ts`. Les règles de suivi y sont testées.
 - Intégration : `__tests__/integration/**/*.test.ts`. Base libSQL réelle dans un fichier temporaire : appeler `setupTestDatabase()` (`__tests__/integration/helpers/test-db.ts`) en tête de fichier.
 - Architecture : `__tests__/unit/architecture/layers.test.ts` vérifie la séparation des couches à partir des imports réels.
+- Composants : `__tests__/unit/components/*.test.ts`, avec Testing Library ; ces fichiers commencent par `// @vitest-environment jsdom` et rendent le composant avec `createElement` (pas de JSX dans un `.ts`).
 - Seuls les fichiers `.test.ts` sont pris en compte (pas `.spec.ts`, pas `.tsx`).
 
 ## Commandes

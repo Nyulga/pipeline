@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { addContact, setCalled, setResponse, type ContactErrors } from "@/services/contacts";
+import {
+  CONTACT_FIELDS,
+  addContact,
+  setCalled,
+  setResponse,
+  type ContactErrors,
+} from "@/services/contacts";
 
 export type TrackingActionState = { ok: true } | { ok: false; error: string };
 
@@ -34,12 +40,7 @@ const field = (fd: FormData, name: string) => {
 
 /** Ajoute un contact depuis le formulaire, puis rafraîchit la liste. */
 export async function addContactAction(formData: FormData): Promise<AddContactState> {
-  const result = await addContact({
-    name: field(formData, "name"),
-    company: field(formData, "company"),
-    phone: field(formData, "phone"),
-    email: field(formData, "email"),
-  });
+  const result = await addContact(Object.fromEntries(CONTACT_FIELDS.map((f) => [f, field(formData, f)])));
   if (!result.ok) return { ok: false, errors: result.errors };
   revalidatePath("/");
   return { ok: true, errors: {} };
