@@ -5,7 +5,7 @@ import { setupTestDatabase } from "../helpers/test-db";
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { revalidatePath } from "next/cache";
-import { addContactAction, setCalledAction, setResponseAction } from "@/app/actions";
+import { addContactAction } from "@/app/actions";
 import { CONTACT_FIELDS, listContacts } from "@/services/contacts";
 
 setupTestDatabase();
@@ -40,37 +40,5 @@ describe("addContactAction (formulaire → service → base)", () => {
     expect(r.errors).toEqual({ name: "Le nom est obligatoire.", email: "Adresse e-mail invalide." });
     expect(revalidatePath).not.toHaveBeenCalled();
     expect((await listContacts()).length).toBe(before);
-  });
-});
-
-describe("actions de suivi (lot 2)", () => {
-  async function created(name: string) {
-    await addContactAction(form({ name }));
-    return (await listContacts()).find((c) => c.name === name)!;
-  }
-
-  it("setCalledAction marque appelé et rafraîchit la liste", async () => {
-    const c = await created("Action appel");
-    vi.mocked(revalidatePath).mockClear();
-    expect(await setCalledAction(c.id, true)).toEqual({ ok: true });
-    expect(revalidatePath).toHaveBeenCalledWith("/");
-    expect((await listContacts()).find((x) => x.id === c.id)?.called).toBe(true);
-  });
-
-  it("setResponseAction enregistre la réponse", async () => {
-    const c = await created("Action réponse");
-    expect(await setResponseAction(c.id, "accepte")).toEqual({ ok: true });
-    expect((await listContacts()).find((x) => x.id === c.id)).toMatchObject({ called: true, response: "accepte" });
-  });
-
-  it("refuse les entrées invalides sans rien écrire ni rafraîchir", async () => {
-    vi.mocked(revalidatePath).mockClear();
-    expect(await setCalledAction(42, true)).toEqual({ ok: false, error: "Requête invalide." });
-    expect(await setCalledAction("x", "oui")).toEqual({ ok: false, error: "Requête invalide." });
-    expect(await setResponseAction("inconnu", "accepte")).toEqual({ ok: false, error: "Contact introuvable." });
-    const c = await created("Action invalide");
-    vi.mocked(revalidatePath).mockClear();
-    expect(await setResponseAction(c.id, "peut-etre")).toEqual({ ok: false, error: "Réponse inconnue." });
-    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

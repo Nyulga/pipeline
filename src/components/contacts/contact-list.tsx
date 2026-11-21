@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { UsersIcon } from "lucide-react";
-import { ContactsView } from "@/components/contacts/contacts-view";
+import { ContactCard } from "@/components/contacts/contact-card";
 import { listContacts } from "@/services/contacts";
 
 /** Liste lue à chaque requête (jamais figée au build), rendue en flux sous un <Suspense>. */
@@ -19,8 +19,17 @@ export async function ContactList() {
   }
 
   return (
-    <section aria-label="Contacts">
-      <ContactsView contacts={contacts} />
+    <section aria-label="Contacts" className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {contacts.length} contact{contacts.length > 1 ? "s" : ""}
+      </p>
+      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {contacts.map((c) => (
+          <li key={c.id}>
+            <ContactCard contact={c} />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
