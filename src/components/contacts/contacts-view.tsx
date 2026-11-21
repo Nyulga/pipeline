@@ -4,6 +4,7 @@ import { useOptimistic, useState, useTransition } from "react";
 import { setCalledAction, setResponseAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
 import { StageBoard } from "@/components/contacts/stage-board";
+import { SAVE_FAILED_MESSAGE, contactCount } from "@/components/contacts/texts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Contact, ContactResponse } from "@/services/contact-model";
 import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
@@ -11,7 +12,7 @@ import { markCalled, markNotCalled, withResponse, type Tracking } from "@/servic
 type Patch = { id: string; tracking: Tracking };
 
 /** Échec inattendu (réseau, base injoignable…) : la page reste là, la carte le signale. */
-const SAVE_FAILED: TrackingActionState = { ok: false, error: "Impossible d'enregistrer, réessaie." };
+const SAVE_FAILED: TrackingActionState = { ok: false, error: SAVE_FAILED_MESSAGE };
 
 export function ContactsView({ contacts }: { contacts: Contact[] }) {
   // Mise à jour optimiste avec les mêmes règles que le service ; le serveur reste la référence.
@@ -53,7 +54,7 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
     <Tabs defaultValue="liste" className="gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {optimistic.length} contact{optimistic.length > 1 ? "s" : ""}
+          {contactCount(optimistic.length)}
         </p>
         <TabsList>
           <TabsTrigger value="liste">Liste</TabsTrigger>

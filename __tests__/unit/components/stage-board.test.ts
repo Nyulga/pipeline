@@ -4,18 +4,10 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { StageBoard } from "@/components/contacts/stage-board";
 import type { Contact } from "@/services/contacts";
+import { makeContact } from "./helpers/contact";
 
-let n = 0;
-const contact = (name: string, called: boolean, response: Contact["response"]): Contact => ({
-  id: `c${++n}`,
-  name,
-  company: null,
-  phone: null,
-  email: null,
-  called,
-  response,
-  createdAt: "2026-11-19T10:00:00.000Z",
-});
+const contact = (name: string, called: boolean, response: Contact["response"]) =>
+  makeContact({ name, called, response });
 
 const contacts = [
   contact("Ana", false, "enAttente"),

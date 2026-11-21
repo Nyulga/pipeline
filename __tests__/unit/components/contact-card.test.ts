@@ -4,18 +4,10 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContactCard } from "@/components/contacts/contact-card";
 import type { Contact } from "@/services/contacts";
+import { makeContact } from "./helpers/contact";
 
-const contact = (over: Partial<Contact> = {}): Contact => ({
-  id: "c1",
-  name: "Claire Martin",
-  company: "Atelier Nord",
-  phone: null,
-  email: null,
-  called: false,
-  response: "enAttente",
-  createdAt: "2026-11-19T10:00:00.000Z",
-  ...over,
-});
+const contact = (over: Partial<Contact> = {}) =>
+  makeContact({ name: "Claire Martin", company: "Atelier Nord", ...over });
 
 function show(c: Contact, { error, compact }: { error?: string; compact?: boolean } = {}) {
   const onCalledChange = vi.fn();

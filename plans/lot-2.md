@@ -71,3 +71,7 @@ L'étape d'un contact se déduit de *appelé* + *réponse* : À appeler · Appel
 - Les libellés et les couleurs des étapes sont dans `src/components/status-badge.tsx`. `STAGES` ne garde que l'ordre.
 - `src/services/contact-model.ts`, sans accès à la base, regroupe `Contact`, `ContactResponse`, `RESPONSES`, `isContactResponse` et `CONTACT_FIELDS`.
 - Le service vérifie « appelé » comme il vérifie la réponse (« État d'appel inconnu. »).
+
+## Correctif suivant (PR #8, commit `fix(lot-2)`)
+- La lecture puis l'écriture du suivi se font dans une seule transaction d'écriture (`updateContactTracking(id, compute)`, couche données). Le service fournit le calcul : la règle reste dans le service. Si le calcul échoue, rien n'est écrit.
+- Les transactions d'écriture d'un même processus passent l'une après l'autre : en local, le client libSQL est synchrone, et une seconde transaction ouverte en même temps échouerait (`SQLITE_BUSY`).

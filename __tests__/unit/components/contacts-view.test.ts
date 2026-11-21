@@ -8,21 +8,12 @@ vi.mock("@/app/actions", () => ({ setCalledAction: vi.fn(), setResponseAction: v
 
 import { setCalledAction, setResponseAction } from "@/app/actions";
 import { ContactsView } from "@/components/contacts/contacts-view";
-import type { Contact } from "@/services/contacts";
+import { makeContact } from "./helpers/contact";
 
-const contact = (id: string, name: string, over: Partial<Contact> = {}): Contact => ({
-  id,
-  name,
-  company: null,
-  phone: null,
-  email: null,
-  called: false,
-  response: "enAttente",
-  createdAt: "2026-11-19T10:00:00.000Z",
-  ...over,
-});
-
-const contacts = [contact("a", "Ana"), contact("b", "Bruno", { called: true, response: "accepte" })];
+const contacts = [
+  makeContact({ id: "a", name: "Ana" }),
+  makeContact({ id: "b", name: "Bruno", called: true, response: "accepte" }),
+];
 
 /** Réponse du serveur « en vol », que le test résout quand il veut. */
 function pending<T>() {
