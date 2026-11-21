@@ -5,10 +5,24 @@ import type { ContactRecord } from "@/data/contacts-repository";
 vi.mock("@/data/contacts-repository", () => ({
   insertContactRecord: vi.fn(),
   selectContactRecords: vi.fn(),
+  selectContactRecordById: vi.fn(),
+  updateContactTracking: vi.fn(),
 }));
 
-import { insertContactRecord, selectContactRecords } from "@/data/contacts-repository";
-import { CONTACT_FIELDS, addContact, listContacts, validateContactInput } from "@/services/contacts";
+import {
+  insertContactRecord,
+  selectContactRecordById,
+  selectContactRecords,
+  updateContactTracking,
+} from "@/data/contacts-repository";
+import {
+  CONTACT_FIELDS,
+  addContact,
+  listContacts,
+  setCalled,
+  setResponse,
+  validateContactInput,
+} from "@/services/contacts";
 
 const record = (over: Partial<ContactRecord> = {}): ContactRecord => ({
   id: "id-1",
@@ -25,6 +39,8 @@ const record = (over: Partial<ContactRecord> = {}): ContactRecord => ({
 beforeEach(() => {
   vi.mocked(insertContactRecord).mockReset();
   vi.mocked(selectContactRecords).mockReset();
+  vi.mocked(selectContactRecordById).mockReset();
+  vi.mocked(updateContactTracking).mockReset();
 });
 
 describe("validateContactInput", () => {
@@ -131,5 +147,48 @@ describe("listContacts", () => {
   it("refuse une réponse inconnue venue de la base", async () => {
     vi.mocked(selectContactRecords).mockResolvedValue([record({ response: "peut-etre" })]);
     await expect(listContacts()).rejects.toThrow(/réponse inconnue/i);
+  });
+});
+describe("setCalled", () => {
+  it("marque appelé en gardant la réponse", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(record({ called: 0, response: "enAttente" }));
+    vi.mocked(updateContactTracking).mockResolvedValue(record({ called: 1 }));
+    const r = await setCalled("id-1", true);
+    expect(updateContactTracking).toHaveBeenCalledWith("id-1", { called: true, response: "enAttente" });
+    expect(r.ok && r.contact.called).toBe(true);
+  });
+
+  it("repasser en « non appelé » remet la réponse à « en attente »", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(record({ called: 1, response: "accepte" }));
+    vi.mocked(updateContactTracking).mockResolvedValue(record());
+    await setCalled("id-1", false);
+    expect(updateContactTracking).toHaveBeenCalledWith("id-1", { called: false, response: "enAttente" });
+  });
+
+  it("signale un contact introuvable sans rien écrire", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(null);
+    expect(await setCalled("inconnu", true)).toEqual({ ok: false, error: "Contact introuvable." });
+    expect(updateContactTracking).not.toHaveBeenCalled();
+  });
+});
+
+describe("setResponse", () => {
+  it("une réponse « accepté » marque aussi le contact comme appelé", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(record({ called: 0, response: "enAttente" }));
+    vi.mocked(updateContactTracking).mockResolvedValue(record({ called: 1, response: "accepte" }));
+    const r = await setResponse("id-1", "accepte");
+    expect(updateContactTracking).toHaveBeenCalledWith("id-1", { called: true, response: "accepte" });
+    expect(r.ok && [r.contact.called, r.contact.response]).toEqual([true, "accepte"]);
+  });
+
+  it("refuse une réponse inconnue sans rien écrire", async () => {
+    expect(await setResponse("id-1", "peut-etre")).toEqual({ ok: false, error: "Réponse inconnue." });
+    expect(selectContactRecordById).not.toHaveBeenCalled();
+    expect(updateContactTracking).not.toHaveBeenCalled();
+  });
+
+  it("signale un contact introuvable", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(null);
+    expect(await setResponse("inconnu", "refuse")).toEqual({ ok: false, error: "Contact introuvable." });
   });
 });
