@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { addContactAction, type AddContactState } from "@/app/actions";
 import { ContactFormFields, type ContactFormValues } from "@/components/contacts/contact-form-fields";
+import { SAVE_FAILED_MESSAGE } from "@/components/contacts/texts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,7 +24,7 @@ type DialogState = AddContactState & { formError?: string };
 const INITIAL: DialogState = { ok: false, errors: {} };
 
 /** Échec inattendu (réseau, base injoignable…) : la fenêtre reste ouverte, la saisie est gardée. */
-const SAVE_FAILED: DialogState = { ok: false, errors: {}, formError: "Impossible d'enregistrer, réessaie." };
+const SAVE_FAILED: DialogState = { ok: false, errors: {}, formError: SAVE_FAILED_MESSAGE };
 
 export function AddContactDialog() {
   const [open, setOpen] = useState(false);
