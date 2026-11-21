@@ -1,9 +1,17 @@
 import { Suspense } from "react";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-list";
+import { ContactSearch } from "@/components/contacts/contact-search";
 import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
 
-export default function Home() {
+type SearchParams = Promise<{ q?: string | string[] }>;
+
+async function SearchBox({ searchParams }: { searchParams: SearchParams }) {
+  const { q } = await searchParams;
+  return <ContactSearch query={(Array.isArray(q) ? q[0] : q)?.trim() ?? ""} />;
+}
+
+export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-12">
       <header className="flex flex-wrap items-end justify-between gap-4 pr-12">
@@ -18,8 +26,12 @@ export default function Home() {
         <DueFollowUps />
       </Suspense>
 
+      <Suspense fallback={<ContactSearch query="" />}>
+        <SearchBox searchParams={searchParams} />
+      </Suspense>
+
       <Suspense fallback={<ContactListSkeleton />}>
-        <ContactList />
+        <ContactList searchParams={searchParams} />
       </Suspense>
     </main>
   );

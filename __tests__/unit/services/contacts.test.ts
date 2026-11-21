@@ -10,6 +10,13 @@ vi.mock("@/data/contacts-repository", () => ({
   updateContactFollowUp: vi.fn(),
 }));
 
+vi.mock("@/data/notes-repository", () => ({
+  insertNoteRecord: vi.fn(),
+  selectNoteRecords: vi.fn(),
+  selectAllNoteRecords: vi.fn(),
+}));
+
+import { selectAllNoteRecords } from "@/data/notes-repository";
 import {
   insertContactRecord,
   selectContactRecordById,
@@ -23,6 +30,7 @@ import {
   getContact,
   listContacts,
   listDueFollowUps,
+  searchContacts,
   setFollowUp,
   setCalled,
   setResponse,
@@ -48,6 +56,7 @@ beforeEach(() => {
   vi.mocked(selectContactRecordById).mockReset();
   vi.mocked(updateContactTracking).mockReset();
   vi.mocked(updateContactFollowUp).mockReset();
+  vi.mocked(selectAllNoteRecords).mockReset();
 });
 
 describe("validateContactInput", () => {
@@ -264,5 +273,25 @@ describe("listDueFollowUps (lot 3)", () => {
       ["retard", "enRetard"],
       ["jour", "aujourdhui"],
     ]);
+  });
+});
+
+describe("searchContacts (lot 4)", () => {
+  it("filtre sur les champs du contact et ses notes, sans casse ni accents, en gardant l'ordre", async () => {
+    vi.mocked(selectContactRecords).mockResolvedValue([
+      record({ id: "a", name: "Hélène Dupré", company: null, phone: null, email: null }),
+      record({ id: "b", name: "Bruno", company: null, phone: null, email: null }),
+      record({ id: "c", name: "Chloé", company: null, phone: null, email: null }),
+    ]);
+    vi.mocked(selectAllNoteRecords).mockResolvedValue([
+      { id: "n1", contact_id: "c", body: "Connaît Hélène", created_at: "2026-11-21T09:00:00.000Z" },
+    ]);
+    expect((await searchContacts("HELENE")).map((c) => c.id)).toEqual(["a", "c"]);
+  });
+
+  it("une recherche vide rend tous les contacts sans lire les notes", async () => {
+    vi.mocked(selectContactRecords).mockResolvedValue([record()]);
+    expect(await searchContacts("")).toHaveLength(1);
+    expect(selectAllNoteRecords).not.toHaveBeenCalled();
   });
 });

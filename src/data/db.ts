@@ -38,6 +38,16 @@ const MIGRATIONS: string[][] = [
        CHECK (next_follow_up IS NULL OR next_follow_up GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]')`,
     `CREATE INDEX IF NOT EXISTS contacts_next_follow_up ON contacts (next_follow_up)`,
   ],
+  // 4 · notes datées (lot 4) : jamais vides, rattachées à un contact.
+  [
+    `CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      contact_id TEXT NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
+      body TEXT NOT NULL CHECK (trim(body, ' ' || char(9, 10, 13)) <> ''),
+      created_at TEXT NOT NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS notes_contact_created ON notes (contact_id, created_at)`,
+  ],
 ];
 
 /** Version du schéma une fois toutes les migrations passées. */

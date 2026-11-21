@@ -9,6 +9,7 @@ import {
   setResponse,
   type ContactErrors,
 } from "@/services/contacts";
+import { addNote } from "@/services/notes";
 
 // Après une écriture, refresh() renvoie la page affichée re-rendue dans la même réponse.
 // La liste n'est pas en cache (lue à chaque requête) : il n'y a rien à invalider, et
@@ -55,6 +56,15 @@ export async function setResponseAction(id: unknown, response: unknown): Promise
 export async function setFollowUpAction(id: unknown, date: unknown): Promise<TrackingActionState> {
   if (typeof id !== "string") return INVALID;
   const r = await setFollowUp(id, date);
+  if (!r.ok) return r;
+  refresh();
+  return { ok: true };
+}
+
+/** Ajoute une note datée à un contact, puis rafraîchit la page affichée. */
+export async function addNoteAction(contactId: unknown, body: unknown): Promise<TrackingActionState> {
+  if (typeof contactId !== "string") return INVALID;
+  const r = await addNote(contactId, body);
   if (!r.ok) return r;
   refresh();
   return { ok: true };

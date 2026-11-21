@@ -19,3 +19,21 @@ const DAY_FORMAT = new Intl.DateTimeFormat("fr-FR", {
 export function formatDay(day: string): string {
   return DAY_FORMAT.format(new Date(`${day}T00:00:00Z`));
 }
+
+const PARIS_DATE = new Intl.DateTimeFormat("fr-FR", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Europe/Paris",
+});
+const PARIS_TIME = new Intl.DateTimeFormat("fr-FR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Paris",
+});
+
+/** « 21 nov. 2026 à 10:30 » : un instant, à l'heure de Paris. */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  return `${PARIS_DATE.format(d)} à ${PARIS_TIME.format(d)}`;
+}

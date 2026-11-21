@@ -6,6 +6,7 @@ import {
   updateContactTracking,
   type ContactRecord,
 } from "@/data/contacts-repository";
+import { selectAllNoteRecords } from "@/data/notes-repository";
 import {
   CONTACT_FIELDS,
   isContactResponse,
@@ -13,6 +14,7 @@ import {
   type ContactField,
 } from "@/services/contact-model";
 import { dueFollowUps, parseFollowUpDate, todayInParis, type DueFollowUp } from "@/services/follow-up";
+import { matchesSearch, normalizeForSearch } from "@/services/search";
 import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
 
 export {
@@ -95,6 +97,22 @@ export async function listContacts(): Promise<Contact[]> {
 export async function getContact(id: string): Promise<Contact | null> {
   const record = await selectContactRecordById(id);
   return record ? toContact(record) : null;
+}
+
+/**
+ * Les contacts dont le nom, l'entreprise, le téléphone, l'e-mail ou une note contient `query`,
+ * sans tenir compte des majuscules ni des accents, du plus récent au plus ancien. Vide : tous.
+ */
+export async function searchContacts(query: string): Promise<Contact[]> {
+  const contacts = await listContacts();
+  if (normalizeForSearch(query) === "") return contacts;
+  const notesByContact = new Map<string, string[]>();
+  for (const n of await selectAllNoteRecords()) {
+    const list = notesByContact.get(n.contact_id) ?? [];
+    list.push(n.body);
+    notesByContact.set(n.contact_id, list);
+  }
+  return contacts.filter((c) => matchesSearch(c, notesByContact.get(c.id) ?? [], query));
 }
 
 export type TrackingResult = { ok: true; contact: Contact } | { ok: false; error: string };

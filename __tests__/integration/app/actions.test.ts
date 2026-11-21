@@ -5,7 +5,14 @@ import { setupTestDatabase } from "../helpers/test-db";
 vi.mock("next/cache", () => ({ refresh: vi.fn(), revalidatePath: vi.fn() }));
 
 import { refresh, revalidatePath } from "next/cache";
-import { addContactAction, setCalledAction, setFollowUpAction, setResponseAction } from "@/app/actions";
+import {
+  addContactAction,
+  addNoteAction,
+  setCalledAction,
+  setFollowUpAction,
+  setResponseAction,
+} from "@/app/actions";
+import { listNotes } from "@/services/notes";
 import { CONTACT_FIELDS, getContact, listContacts } from "@/services/contacts";
 
 setupTestDatabase();
@@ -99,5 +106,24 @@ describe("setFollowUpAction (lot 3)", () => {
     expect(await setFollowUpAction(c.id, "03/12/2026")).toEqual({ ok: false, error: "Date invalide." });
     expect(refresh).not.toHaveBeenCalled();
     expect((await getContact(c.id))?.nextFollowUp).toBeNull();
+  });
+});
+
+describe("addNoteAction (lot 4)", () => {
+  it("ajoute une note et rafraîchit la page", async () => {
+    const c = await created("Action note");
+    vi.mocked(refresh).mockClear();
+    expect(await addNoteAction(c.id, "Rappeler lundi")).toEqual({ ok: true });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect((await listNotes(c.id)).map((n) => n.body)).toEqual(["Rappeler lundi"]);
+  });
+
+  it("refuse un id invalide ou une note vide sans rien écrire ni rafraîchir", async () => {
+    const c = await created("Action note vide");
+    vi.mocked(refresh).mockClear();
+    expect(await addNoteAction(null, "Texte")).toEqual({ ok: false, error: "Requête invalide." });
+    expect(await addNoteAction(c.id, "  ")).toEqual({ ok: false, error: "La note ne peut pas être vide." });
+    expect(refresh).not.toHaveBeenCalled();
+    expect(await listNotes(c.id)).toEqual([]);
   });
 });
