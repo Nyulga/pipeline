@@ -1,6 +1,5 @@
 import {
   insertContactRecord,
-  selectContactRecordById,
   selectContactRecords,
   updateContactTracking,
   type ContactRecord,
@@ -89,11 +88,9 @@ export async function listContacts(): Promise<Contact[]> {
 
 export type TrackingResult = { ok: true; contact: Contact } | { ok: false; error: string };
 
-/** Applique une règle de suivi au contact `id` et enregistre le résultat. */
+/** Applique une règle de suivi au contact `id` et enregistre le résultat (lecture et écriture atomiques). */
 async function updateTracking(id: string, rule: (t: Tracking) => Tracking): Promise<TrackingResult> {
-  const record = await selectContactRecordById(id);
-  if (!record) return { ok: false, error: "Contact introuvable." };
-  const updated = await updateContactTracking(id, rule(toContact(record)));
+  const updated = await updateContactTracking(id, (current) => rule(toContact(current)));
   if (!updated) return { ok: false, error: "Contact introuvable." };
   return { ok: true, contact: toContact(updated) };
 }
