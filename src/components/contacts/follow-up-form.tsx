@@ -33,6 +33,9 @@ export function FollowUpForm({ contactId, nextFollowUp }: { contactId: string; n
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        // Un champ date vaut "" quand la saisie est incomplète : « Enregistrer » ne doit jamais
+        // effacer la relance par accident. Effacer, c'est le bouton « Effacer ».
+        if (value === "") return setFeedback({ field: "Choisis une date complète." });
         save(value);
       }}
     >

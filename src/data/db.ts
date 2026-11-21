@@ -32,10 +32,11 @@ const MIGRATIONS: string[][] = [
      WHEN trim(NEW.name, ' ' || char(9, 10, 13)) = ''
      BEGIN SELECT RAISE(ABORT, 'contacts.name ne peut pas être vide'); END`,
   ],
-  // 3 · prochaine relance (lot 3) : un jour AAAA-MM-JJ, ou NULL.
+  // 3 · prochaine relance (lot 3) : un jour réel AAAA-MM-JJ, ou NULL. date(x) IS x refuse
+  // aussi bien « 03/12/2026 » que « 2026-02-30 » (date() renvoie NULL ou une autre date).
   [
     `ALTER TABLE contacts ADD COLUMN next_follow_up TEXT
-       CHECK (next_follow_up IS NULL OR next_follow_up GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]')`,
+       CHECK (next_follow_up IS NULL OR date(next_follow_up) IS next_follow_up)`,
     `CREATE INDEX IF NOT EXISTS contacts_next_follow_up ON contacts (next_follow_up)`,
   ],
   // 4 · notes datées (lot 4) : jamais vides, rattachées à un contact.

@@ -54,6 +54,16 @@ describe("FollowUpForm : la prochaine relance sur la fiche (lot 3)", () => {
     expect(setFollowUpAction).toHaveBeenCalledWith("abc", "");
   });
 
+  it("« Enregistrer » avec un champ vide (date incomplète) n'efface pas la relance : seul « Effacer » le fait", async () => {
+    show("2026-12-03");
+    fireEvent.change(dateField(), { target: { value: "" } });
+    await click("Enregistrer");
+    expect(setFollowUpAction).not.toHaveBeenCalled();
+    expect(document.getElementById(dateField().getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      "Choisis une date complète.",
+    );
+  });
+
   it("une date refusée s'affiche sur le champ", async () => {
     vi.mocked(setFollowUpAction).mockResolvedValue({ ok: false, error: "Date invalide." });
     show(null);

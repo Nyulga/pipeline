@@ -53,7 +53,8 @@ describe("migrations", () => {
 describe("migration 3 · prochaine relance (lot 3)", () => {
   it("refuse une relance qui n'est pas au format AAAA-MM-JJ", async () => {
     const db = await getDb();
-    await expect(db.execute("UPDATE contacts SET next_follow_up = '03/12/2026' WHERE id = 'v1-a'")).rejects.toThrow();
+    for (const bad of ["03/12/2026", "2026-02-30", "2026-19-39"])
+      await expect(db.execute({ sql: "UPDATE contacts SET next_follow_up = ? WHERE id = 'v1-a'", args: [bad] })).rejects.toThrow();
     await db.execute("UPDATE contacts SET next_follow_up = '2026-12-03' WHERE id = 'v1-a'");
   });
 });
