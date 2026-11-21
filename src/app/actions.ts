@@ -30,7 +30,7 @@ const INVALID: TrackingActionState = { ok: false, error: "Requête invalide." };
 
 /** Marque un contact appelé / non appelé, puis rafraîchit la liste. */
 export async function setCalledAction(id: unknown, called: unknown): Promise<TrackingActionState> {
-  if (typeof id !== "string" || typeof called !== "boolean") return INVALID;
+  if (typeof id !== "string") return INVALID;
   const r = await setCalled(id, called);
   if (!r.ok) return r;
   revalidatePath("/");

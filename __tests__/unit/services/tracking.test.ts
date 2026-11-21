@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  RESPONSES,
   STAGES,
+  canCancelCall,
   groupByStage,
-  isContactResponse,
   markCalled,
   markNotCalled,
   stageOf,
@@ -25,13 +24,8 @@ describe("stageOf : l'étape se déduit de appelé + réponse", () => {
 });
 
 describe("STAGES", () => {
-  it("liste les 4 étapes dans l'ordre du parcours, avec un libellé", () => {
-    expect(STAGES.map((s) => [s.id, s.label])).toEqual([
-      ["aAppeler", "À appeler"],
-      ["appeleEnAttente", "Appelé · en attente"],
-      ["accepte", "Accepté"],
-      ["refuse", "Refusé"],
-    ]);
+  it("liste les 4 étapes dans l'ordre du parcours", () => {
+    expect(STAGES).toEqual(["aAppeler", "appeleEnAttente", "accepte", "refuse"]);
   });
 });
 
@@ -71,17 +65,18 @@ describe("règles de suivi", () => {
   });
 });
 
-describe("RESPONSES", () => {
-  it("liste les 3 réponses, dans l'ordre du sélecteur", () => {
-    expect(RESPONSES).toEqual(["accepte", "refuse", "enAttente"]);
+describe("canCancelCall : annuler l'appel ne doit jamais effacer une réponse", () => {
+  it("possible pour un contact appelé encore en attente", () => {
+    expect(canCancelCall(t(true, "enAttente"))).toBe(true);
   });
-});
 
-describe("isContactResponse", () => {
-  it("n'accepte que les 3 réponses connues", () => {
-    expect(["accepte", "refuse", "enAttente"].every(isContactResponse)).toBe(true);
-    expect(isContactResponse("peut-etre")).toBe(false);
-    expect(isContactResponse(undefined)).toBe(false);
+  it("impossible tant que le contact a une réponse « accepté » ou « refusé »", () => {
+    expect(canCancelCall(t(true, "accepte"))).toBe(false);
+    expect(canCancelCall(t(true, "refuse"))).toBe(false);
+  });
+
+  it("sans objet pour un contact pas encore appelé", () => {
+    expect(canCancelCall(t(false, "enAttente"))).toBe(false);
   });
 });
 

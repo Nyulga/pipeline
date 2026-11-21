@@ -5,18 +5,21 @@ import {
   updateContactTracking,
   type ContactRecord,
 } from "@/data/contacts-repository";
-import { CONTACT_FIELDS, type ContactField } from "@/services/contact-fields";
 import {
+  CONTACT_FIELDS,
   isContactResponse,
-  markCalled,
-  markNotCalled,
-  withResponse,
   type Contact,
-  type Tracking,
-} from "@/services/tracking";
+  type ContactField,
+} from "@/services/contact-model";
+import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
 
-export { CONTACT_FIELDS, type ContactField } from "@/services/contact-fields";
-export type { Contact, ContactResponse } from "@/services/tracking";
+export {
+  CONTACT_FIELDS,
+  RESPONSES,
+  type Contact,
+  type ContactField,
+  type ContactResponse,
+} from "@/services/contact-model";
 
 export type ContactInput = Partial<Record<ContactField, string | null>>;
 export type ContactErrors = Partial<Record<ContactField, string>>;
@@ -96,7 +99,8 @@ async function updateTracking(id: string, rule: (t: Tracking) => Tracking): Prom
 }
 
 /** Marque le contact appelé ou non appelé (« non appelé » remet la réponse à « en attente »). */
-export function setCalled(id: string, called: boolean): Promise<TrackingResult> {
+export async function setCalled(id: string, called: unknown): Promise<TrackingResult> {
+  if (typeof called !== "boolean") return { ok: false, error: "État d'appel inconnu." };
   return updateTracking(id, called ? markCalled : markNotCalled);
 }
 

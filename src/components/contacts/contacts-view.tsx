@@ -5,16 +5,13 @@ import { setCalledAction, setResponseAction, type TrackingActionState } from "@/
 import { ContactCard } from "@/components/contacts/contact-card";
 import { StageBoard } from "@/components/contacts/stage-board";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  markCalled,
-  markNotCalled,
-  withResponse,
-  type Contact,
-  type ContactResponse,
-  type Tracking,
-} from "@/services/tracking";
+import type { Contact, ContactResponse } from "@/services/contact-model";
+import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
 
 type Patch = { id: string; tracking: Tracking };
+
+/** Échec inattendu (réseau, base injoignable…) : la page reste là, la carte le signale. */
+const SAVE_FAILED: TrackingActionState = { ok: false, error: "Impossible d'enregistrer, réessaie." };
 
 export function ContactsView({ contacts }: { contacts: Contact[] }) {
   // Mise à jour optimiste avec les mêmes règles que le service ; le serveur reste la référence.
@@ -27,7 +24,8 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
   function update(c: Contact, tracking: Tracking, save: () => Promise<TrackingActionState>) {
     startTransition(async () => {
       applyOptimistic({ id: c.id, tracking });
-      const r = await save();
+      // La mise à jour optimiste s'annule d'elle-même à la fin de la transition si rien n'a changé côté serveur.
+      const r = await save().catch(() => SAVE_FAILED);
       setErrors((prev) => {
         const next = { ...prev };
         delete next[c.id];

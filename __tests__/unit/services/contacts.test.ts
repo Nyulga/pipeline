@@ -170,6 +170,12 @@ describe("setCalled", () => {
     expect(await setCalled("inconnu", true)).toEqual({ ok: false, error: "Contact introuvable." });
     expect(updateContactTracking).not.toHaveBeenCalled();
   });
+
+  it("refuse un état d'appel qui n'est pas un booléen, sans rien lire ni écrire", async () => {
+    expect(await setCalled("id-1", "oui")).toEqual({ ok: false, error: "État d'appel inconnu." });
+    expect(selectContactRecordById).not.toHaveBeenCalled();
+    expect(updateContactTracking).not.toHaveBeenCalled();
+  });
 });
 
 describe("setResponse", () => {

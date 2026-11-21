@@ -17,30 +17,59 @@ const contact = (over: Partial<Contact> = {}): Contact => ({
   ...over,
 });
 
-function show(c: Contact, error?: string) {
+function show(c: Contact, { error, compact }: { error?: string; compact?: boolean } = {}) {
   const onCalledChange = vi.fn();
   const onResponseChange = vi.fn();
-  render(createElement(ContactCard, { contact: c, error, onCalledChange, onResponseChange }));
+  render(createElement(ContactCard, { contact: c, error, compact, onCalledChange, onResponseChange }));
   return { onCalledChange, onResponseChange };
 }
 
+const stageBadge = (label: string) => screen.queryByText(label, { selector: "[data-slot=badge]" });
+const isDisabled = (el: HTMLElement) => el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
+
 afterEach(cleanup);
 
-describe("ContactCard : suivi d'un contact", () => {
-  it("affiche « Non appelé » et propose « Marquer appelé » pour un contact pas encore appelé", () => {
+describe("ContactCard : l'étape du contact", () => {
+  it("affiche l'étape dans un seul badge", () => {
+    show(contact({ called: true, response: "enAttente" }));
+    expect(stageBadge("Appelé · en attente")).toBeTruthy();
+    expect(document.querySelectorAll("[data-slot=badge]")).toHaveLength(1);
+  });
+
+  it("en vue compacte (colonne d'étape), n'affiche pas le badge : la colonne le dit déjà", () => {
+    show(contact(), { compact: true });
+    expect(document.querySelectorAll("[data-slot=badge]")).toHaveLength(0);
+  });
+});
+
+describe("ContactCard : marquer et annuler l'appel", () => {
+  it("propose « Marquer appelé » pour un contact pas encore appelé", () => {
     const { onCalledChange } = show(contact());
-    expect(screen.getByText("Non appelé", { selector: "[data-slot=badge]" })).toBeTruthy();
+    expect(stageBadge("À appeler")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Marquer appelé" }));
     expect(onCalledChange).toHaveBeenCalledWith(true);
   });
 
-  it("affiche « Appelé » et propose de le repasser en « Non appelé »", () => {
+  it("propose « Annuler l'appel » pour un contact appelé encore en attente", () => {
     const { onCalledChange } = show(contact({ called: true }));
-    expect(screen.getByText("Appelé", { selector: "[data-slot=badge]" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Non appelé" }));
+    const cancel = screen.getByRole("button", { name: "Annuler l'appel" });
+    expect(isDisabled(cancel)).toBe(false);
+    fireEvent.click(cancel);
     expect(onCalledChange).toHaveBeenCalledWith(false);
   });
 
+  it("désactive « Annuler l'appel » tant que le contact a une réponse, et explique pourquoi", () => {
+    const { onCalledChange } = show(contact({ called: true, response: "accepte" }));
+    const cancel = screen.getByRole("button", { name: "Annuler l'appel" });
+    expect(isDisabled(cancel)).toBe(true);
+    fireEvent.click(cancel);
+    expect(onCalledChange).not.toHaveBeenCalled();
+    const hint = document.getElementById(cancel.getAttribute("aria-describedby") ?? "");
+    expect(hint?.textContent).toBe("Remets d'abord la réponse « En attente ».");
+  });
+});
+
+describe("ContactCard : la réponse", () => {
   it("le sélecteur de réponse montre la réponse active", () => {
     show(contact({ called: true, response: "refuse" }));
     const group = screen.getByRole("group", { name: "Réponse de Claire Martin" });
@@ -55,7 +84,7 @@ describe("ContactCard : suivi d'un contact", () => {
   });
 
   it("affiche l'erreur reçue sur la carte", () => {
-    show(contact(), "Contact introuvable.");
+    show(contact(), { error: "Contact introuvable." });
     expect(screen.getByRole("alert").textContent).toBe("Contact introuvable.");
   });
 });

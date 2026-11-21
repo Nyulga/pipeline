@@ -1,6 +1,6 @@
 // Données 100 % fictives, utilisées uniquement par la page /simulation.
 // Rien ici ne passe par la couche données : c'est un bac à sable visuel.
-import type { Response } from "@/components/status-badge";
+import type { ContactResponse } from "@/services/contact-model";
 
 export type Company = { id: string; name: string; sector: string; city: string };
 
@@ -12,7 +12,7 @@ export type SimContact = {
   phone: string;
   email: string;
   called: boolean;
-  response: Response;
+  response: ContactResponse;
 };
 
 export const companies: Company[] = [

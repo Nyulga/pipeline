@@ -69,7 +69,7 @@ describe("actions de suivi (lot 2)", () => {
     const c = await created("Action invalide");
     vi.mocked(revalidatePath).mockClear();
     expect(await setCalledAction(42, true)).toEqual({ ok: false, error: "Requête invalide." });
-    expect(await setCalledAction(c.id, "oui")).toEqual({ ok: false, error: "Requête invalide." });
+    expect(await setCalledAction(c.id, "oui")).toEqual({ ok: false, error: "État d'appel inconnu." });
     expect(await setResponseAction(null, "accepte")).toEqual({ ok: false, error: "Requête invalide." });
     expect(await setResponseAction("inconnu", "accepte")).toEqual({ ok: false, error: "Contact introuvable." });
     expect(await setResponseAction(c.id, "peut-etre")).toEqual({ ok: false, error: "Réponse inconnue." });
