@@ -11,7 +11,8 @@ import {
   Trash2Icon,
   UsersIcon,
 } from "lucide-react";
-import { StatusBadge, statusStyles, type Response } from "@/components/status-badge";
+import { StatusBadge, statusStyles } from "@/components/status-badge";
+import type { ContactResponse } from "@/services/contact-model";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +62,7 @@ import { companies, initialContacts, sectors, type SimContact } from "./fixtures
 
 const companyById = new Map(companies.map((c) => [c.id, c]));
 const companyItems = Object.fromEntries(companies.map((c) => [c.id, c.name]));
-const responses: Response[] = ["accepte", "refuse", "enAttente"];
+const responses: ContactResponse[] = ["accepte", "refuse", "enAttente"];
 
 type Filter = "tous" | "aAppeler" | "enAttente" | "accepte" | "refuse";
 const filters: { value: Filter; label: string; match: (c: SimContact) => boolean }[] = [
@@ -260,7 +261,7 @@ function ContactCard({
                 <DropdownMenuLabel>Réponse</DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={c.response}
-                  onValueChange={(v) => onChange({ response: v as Response })}
+                  onValueChange={(v) => onChange({ response: v as ContactResponse })}
                 >
                   {responses.map((r) => (
                     <DropdownMenuRadioItem key={r} value={r}>
@@ -303,7 +304,7 @@ function ContactCard({
           size="sm"
           spacing={0}
           value={[c.response]}
-          onValueChange={(v) => v[0] && onChange({ response: v[0] as Response })}
+          onValueChange={(v) => v[0] && onChange({ response: v[0] as ContactResponse })}
           aria-label="Réponse"
         >
           {responses.map((r) => (

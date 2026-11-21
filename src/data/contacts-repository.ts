@@ -62,3 +62,22 @@ export async function selectContactRecords(): Promise<ContactRecord[]> {
   );
   return rows.map((r) => toRecord(r as Record<string, unknown>));
 }
+
+/** Un contact par son id, ou null s'il n'existe pas. */
+export async function selectContactRecordById(id: string): Promise<ContactRecord | null> {
+  const db = await getDb();
+  const { rows } = await db.execute({ sql: `SELECT ${COLUMNS} FROM contacts WHERE id = ?`, args: [id] });
+  return rows[0] ? toRecord(rows[0] as Record<string, unknown>) : null;
+}
+
+export type TrackingRecord = { called: boolean; response: string };
+
+/** Enregistre appelé + réponse du contact `id`. Renvoie la ligne modifiée, ou null si l'id est inconnu. */
+export async function updateContactTracking(id: string, t: TrackingRecord): Promise<ContactRecord | null> {
+  const db = await getDb();
+  const { rows } = await db.execute({
+    sql: `UPDATE contacts SET called = ?, response = ? WHERE id = ? RETURNING ${COLUMNS}`,
+    args: [t.called ? 1 : 0, t.response, id],
+  });
+  return rows[0] ? toRecord(rows[0] as Record<string, unknown>) : null;
+}

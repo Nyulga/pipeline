@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { closeDb, getDb } from "@/data/db";
-import { insertContactRecord, selectContactRecords } from "@/data/contacts-repository";
+import {
+  insertContactRecord,
+  selectContactRecordById,
+  selectContactRecords,
+  updateContactTracking,
+} from "@/data/contacts-repository";
 import { setupTestDatabase } from "../helpers/test-db";
 
 setupTestDatabase();
@@ -47,5 +52,33 @@ describe("contacts-repository (libSQL réel)", () => {
     await closeDb();
     const names = (await selectContactRecords()).map((r) => r.name);
     expect(names).toContain("Persistant");
+  });
+});
+
+describe("suivi (lot 2)", () => {
+  it("relit un contact par son id, ou null s'il n'existe pas", async () => {
+    const c = await insertContactRecord({ ...base, name: "Par id" });
+    expect((await selectContactRecordById(c.id))?.name).toBe("Par id");
+    expect(await selectContactRecordById("inconnu")).toBeNull();
+  });
+
+  it("enregistre appelé + réponse, et renvoie null pour un id inconnu", async () => {
+    const c = await insertContactRecord({ ...base, name: "Suivi" });
+    const u = await updateContactTracking(c.id, { called: true, response: "accepte" });
+    expect(u).toMatchObject({ id: c.id, called: 1, response: "accepte" });
+    expect((await selectContactRecordById(c.id))?.response).toBe("accepte");
+    expect(await updateContactTracking("inconnu", { called: true, response: "refuse" })).toBeNull();
+  });
+
+  it("ne modifie que le contact visé", async () => {
+    const a = await insertContactRecord({ ...base, name: "Visé" });
+    const b = await insertContactRecord({ ...base, name: "Voisin" });
+    await updateContactTracking(a.id, { called: true, response: "refuse" });
+    expect(await selectContactRecordById(b.id)).toMatchObject({ called: 0, response: "enAttente" });
+  });
+
+  it("refuse une réponse hors liste à la mise à jour (contrainte de la table)", async () => {
+    const c = await insertContactRecord({ ...base, name: "Contrainte" });
+    await expect(updateContactTracking(c.id, { called: true, response: "peut-etre" })).rejects.toThrow();
   });
 });

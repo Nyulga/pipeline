@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { StatusBadge, statusStyles, type Status } from "@/components/status-badge";
+import { StageBadge, StatusBadge, statusStyles, type Status } from "@/components/status-badge";
+import { STAGES } from "@/services/tracking";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -166,6 +167,14 @@ export default function DesignSystemPage() {
         </div>
         <p className="text-sm text-muted-foreground">
           Par défaut, un nouveau contact est « non appelé » et « en attente ».
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {STAGES.map((stage) => (
+            <StageBadge key={stage} stage={stage} />
+          ))}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          L&apos;étape se déduit de l&apos;appel et de la réponse ; c&apos;est elle que montre la carte d&apos;un contact.
         </p>
       </Section>
 

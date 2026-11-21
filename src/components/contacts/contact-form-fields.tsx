@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CONTACT_FIELDS, type ContactField } from "@/services/contact-fields";
+import { CONTACT_FIELDS, type ContactField } from "@/services/contact-model";
 
 export type ContactFormValues = Record<ContactField, string>;
 

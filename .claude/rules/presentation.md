@@ -13,14 +13,14 @@ Périmètre : `src/app`, `src/components`.
   Jamais d'import de `@/data/*` ni du client libSQL (`@libsql/*`), y compris pour un simple type.
   Un type dont la présentation a besoin est exposé (ou ré-exporté) par le service.
 - **N'utilise que les composants du design system** : les composants shadcn de
-  `src/components/ui` et ceux construits dessus (ex. `StatusBadge`).
+  `src/components/ui` et ceux construits dessus (ex. `StatusBadge`, `StageBadge`).
   Besoin d'un composant manquant : `pnpm shadcn add <nom>`, pas d'élément maison stylé à la main.
 - **Aucune couleur en dur.** Uniquement les tokens du thème Papier :
   `bg-primary`, `text-muted-foreground`, `border-border`, `text-success`, `bg-warning-muted`…
   Interdits : hex (`#c4622d`), `rgb()`, `hsl()`, `oklch()` et les palettes Tailwind
   (`bg-red-500`, `text-gray-600`, `bg-black`…).
   Les couleurs ne se définissent que dans `src/app/globals.css`, en clair et en sombre.
-- Statuts de suivi : toujours via `StatusBadge`, jamais un badge recoloré à la main.
+- Statuts de suivi et étapes : toujours via `StatusBadge` / `StageBadge` (`src/components/status-badge.tsx`), jamais un badge recoloré à la main. Libellés et couleurs des statuts et des étapes ne se définissent que là.
 - Exception : `src/components/ui` est généré par shadcn. On ne l'édite que pour l'adapter au thème,
   sans y ajouter de couleur en dur.
 

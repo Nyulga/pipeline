@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CONTACT_FIELDS, addContact, type ContactErrors } from "@/services/contacts";
+import {
+  CONTACT_FIELDS,
+  addContact,
+  setCalled,
+  setResponse,
+  type ContactErrors,
+} from "@/services/contacts";
 
 export type AddContactState = { ok: boolean; errors: ContactErrors };
 
@@ -16,4 +22,26 @@ export async function addContactAction(formData: FormData): Promise<AddContactSt
   if (!result.ok) return { ok: false, errors: result.errors };
   revalidatePath("/");
   return { ok: true, errors: {} };
+}
+
+export type TrackingActionState = { ok: true } | { ok: false; error: string };
+
+const INVALID: TrackingActionState = { ok: false, error: "Requête invalide." };
+
+/** Marque un contact appelé / non appelé, puis rafraîchit la liste. */
+export async function setCalledAction(id: unknown, called: unknown): Promise<TrackingActionState> {
+  if (typeof id !== "string") return INVALID;
+  const r = await setCalled(id, called);
+  if (!r.ok) return r;
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/** Enregistre la réponse d'un contact, puis rafraîchit la liste. */
+export async function setResponseAction(id: unknown, response: unknown): Promise<TrackingActionState> {
+  if (typeof id !== "string") return INVALID;
+  const r = await setResponse(id, response);
+  if (!r.ok) return r;
+  revalidatePath("/");
+  return { ok: true };
 }
