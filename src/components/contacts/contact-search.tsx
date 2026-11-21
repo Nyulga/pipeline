@@ -15,6 +15,8 @@ export function ContactSearch({ query }: { query: string }) {
         Rechercher
       </Label>
       <Input
+        // Champ non contrôlé : la clé le recrée quand la recherche change (ex. « Effacer la recherche »).
+        key={query}
         id="recherche"
         name="q"
         type="search"

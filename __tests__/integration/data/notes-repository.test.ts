@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getDb } from "@/data/db";
-import { insertContactRecord } from "@/data/contacts-repository";
+import { insertContactRecord, updateContactTracking } from "@/data/contacts-repository";
 import { insertNoteRecord, selectAllNoteRecords, selectNoteRecords } from "@/data/notes-repository";
 import { setupTestDatabase } from "../helpers/test-db";
 
@@ -33,6 +33,17 @@ describe("notes-repository (libSQL réel, lot 4)", () => {
         args: [c.id],
       }),
     ).rejects.toThrow();
+  });
+
+  it("une note ajoutée pendant un changement de suivi n'échoue pas (écritures l'une après l'autre)", async () => {
+    const c = await insertContactRecord({ ...base, name: "Concurrence" });
+    const writes = Array.from({ length: 10 }, (_, i) => [
+      updateContactTracking(c.id, () => ({ called: i % 2 === 0, response: "enAttente" })),
+      insertNoteRecord(c.id, `note ${i}`),
+      insertContactRecord({ ...base, name: `Concurrent ${i}` }),
+    ]).flat();
+    await expect(Promise.all(writes)).resolves.toBeDefined();
+    expect(await selectNoteRecords(c.id)).toHaveLength(10);
   });
 
   it("ne mélange pas les notes de deux contacts", async () => {

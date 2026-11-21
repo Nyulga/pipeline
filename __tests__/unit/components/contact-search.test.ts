@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ContactSearch } from "@/components/contacts/contact-search";
@@ -20,5 +20,12 @@ describe("ContactSearch : retrouver un contact (lot 4)", () => {
     render(createElement(ContactSearch, { query: "hélène" }));
     expect(screen.getByLabelText("Rechercher")).toHaveProperty("value", "hélène");
     expect(screen.getByRole("link", { name: "Effacer la recherche" }).getAttribute("href")).toBe("/");
+  });
+
+  it("quand la recherche change (ex. « Effacer la recherche »), le champ suit, même après une saisie", () => {
+    const { rerender } = render(createElement(ContactSearch, { query: "dupont" }));
+    fireEvent.change(screen.getByLabelText("Rechercher"), { target: { value: "abc" } });
+    rerender(createElement(ContactSearch, { query: "" }));
+    expect(screen.getByLabelText("Rechercher")).toHaveProperty("value", "");
   });
 });

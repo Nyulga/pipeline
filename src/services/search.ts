@@ -4,9 +4,18 @@
 
 import type { Contact } from "@/services/contact-model";
 
-/** Minuscules, accents retirés, espaces autour supprimés : « Hélène » → « helene ». */
+/** Ligatures que NFD ne décompose pas. */
+const LIGATURES: Record<string, string> = { œ: "oe", æ: "ae" };
+
+/** Minuscules, accents retirés, ligatures dépliées, espaces resserrés : « Cœur  d'Hélène » → « coeur d'helene ». */
 export function normalizeForSearch(text: string): string {
-  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+  return text
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[œæ]/g, (l) => LIGATURES[l])
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 const digits = (text: string) => text.replace(/\D/g, "");

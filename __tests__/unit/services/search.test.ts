@@ -19,6 +19,10 @@ describe("normalizeForSearch", () => {
   it("passe en minuscules et retire les accents", () => {
     expect(normalizeForSearch("  HÉLÈNE Çà Ïle ")).toBe("helene ca ile");
   });
+
+  it("déplie les ligatures et resserre les espaces", () => {
+    expect(normalizeForSearch("Cœur  de	Lyon · Æther")).toBe("coeur de lyon · aether");
+  });
 });
 
 describe("matchesSearch : une partie du nom, de l'entreprise, du téléphone, de l'e-mail ou d'une note", () => {
@@ -31,6 +35,10 @@ describe("matchesSearch : une partie du nom, de l'entreprise, du téléphone, de
     ["e-mail", "@EOLE"],
   ])("trouve par %s", (_, q) => {
     expect(matchesSearch(contact(), [], q)).toBe(true);
+  });
+
+  it("« coeur de » trouve « Cœur  de Lyon »", () => {
+    expect(matchesSearch(contact({ company: "Cœur  de Lyon" }), [], "coeur de")).toBe(true);
   });
 
   it("trouve par une note, sans casse ni accents", () => {
