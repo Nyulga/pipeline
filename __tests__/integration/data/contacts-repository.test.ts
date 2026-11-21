@@ -4,6 +4,7 @@ import {
   insertContactRecord,
   selectContactRecordById,
   selectContactRecords,
+  updateContactFollowUp,
   updateContactTracking,
 } from "@/data/contacts-repository";
 import { setupTestDatabase } from "../helpers/test-db";
@@ -120,5 +121,31 @@ describe("suivi (lot 2)", () => {
   it("refuse une réponse hors liste à la mise à jour (contrainte de la table)", async () => {
     const c = await insertContactRecord({ ...base, name: "Contrainte" });
     await expect(updateContactTracking(c.id, () => ({ called: true, response: "peut-etre" }))).rejects.toThrow();
+  });
+});
+
+describe("relance (lot 3)", () => {
+  it("un nouveau contact n'a pas de relance", async () => {
+    const c = await insertContactRecord({ ...base, name: "Sans relance" });
+    expect(c.next_follow_up).toBeNull();
+  });
+
+  it("enregistre puis efface la prochaine relance", async () => {
+    const c = await insertContactRecord({ ...base, name: "Relance" });
+    expect(await updateContactFollowUp(c.id, "2026-12-03")).toMatchObject({ id: c.id, next_follow_up: "2026-12-03" });
+    expect((await selectContactRecordById(c.id))?.next_follow_up).toBe("2026-12-03");
+    expect(await updateContactFollowUp(c.id, null)).toMatchObject({ next_follow_up: null });
+    expect((await selectContactRecordById(c.id))?.next_follow_up).toBeNull();
+  });
+
+  it("renvoie null pour un id inconnu", async () => {
+    expect(await updateContactFollowUp("inconnu", "2026-12-03")).toBeNull();
+  });
+
+  it("garde la relance quand le suivi change", async () => {
+    const c = await insertContactRecord({ ...base, name: "Relance et suivi" });
+    await updateContactFollowUp(c.id, "2026-12-03");
+    await updateContactTracking(c.id, () => ({ called: true, response: "enAttente" }));
+    expect((await selectContactRecordById(c.id))?.next_follow_up).toBe("2026-12-03");
   });
 });

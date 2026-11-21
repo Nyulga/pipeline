@@ -32,7 +32,16 @@ const MIGRATIONS: string[][] = [
      WHEN trim(NEW.name, ' ' || char(9, 10, 13)) = ''
      BEGIN SELECT RAISE(ABORT, 'contacts.name ne peut pas être vide'); END`,
   ],
+  // 3 · prochaine relance (lot 3) : un jour AAAA-MM-JJ, ou NULL.
+  [
+    `ALTER TABLE contacts ADD COLUMN next_follow_up TEXT
+       CHECK (next_follow_up IS NULL OR next_follow_up GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]')`,
+    `CREATE INDEX IF NOT EXISTS contacts_next_follow_up ON contacts (next_follow_up)`,
+  ],
 ];
+
+/** Version du schéma une fois toutes les migrations passées. */
+export const SCHEMA_VERSION = MIGRATIONS.length;
 
 async function migrate(db: Client) {
   const { rows } = await db.execute("PRAGMA user_version");

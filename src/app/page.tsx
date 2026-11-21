@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-list";
+import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
 
 export default function Home() {
   return (
@@ -12,6 +13,10 @@ export default function Home() {
         </div>
         <AddContactDialog />
       </header>
+
+      <Suspense fallback={<DueFollowUpsSkeleton />}>
+        <DueFollowUps />
+      </Suspense>
 
       <Suspense fallback={<ContactListSkeleton />}>
         <ContactList />

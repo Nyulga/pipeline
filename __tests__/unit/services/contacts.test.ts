@@ -7,18 +7,23 @@ vi.mock("@/data/contacts-repository", () => ({
   selectContactRecords: vi.fn(),
   selectContactRecordById: vi.fn(),
   updateContactTracking: vi.fn(),
+  updateContactFollowUp: vi.fn(),
 }));
 
 import {
   insertContactRecord,
   selectContactRecordById,
   selectContactRecords,
+  updateContactFollowUp,
   updateContactTracking,
 } from "@/data/contacts-repository";
 import {
   CONTACT_FIELDS,
   addContact,
+  getContact,
   listContacts,
+  listDueFollowUps,
+  setFollowUp,
   setCalled,
   setResponse,
   validateContactInput,
@@ -32,6 +37,7 @@ const record = (over: Partial<ContactRecord> = {}): ContactRecord => ({
   email: "claire@ateliernord.fr",
   called: 0,
   response: "enAttente",
+  next_follow_up: null,
   created_at: "2026-11-19T10:00:00.000Z",
   ...over,
 });
@@ -41,6 +47,7 @@ beforeEach(() => {
   vi.mocked(selectContactRecords).mockReset();
   vi.mocked(selectContactRecordById).mockReset();
   vi.mocked(updateContactTracking).mockReset();
+  vi.mocked(updateContactFollowUp).mockReset();
 });
 
 describe("validateContactInput", () => {
@@ -119,6 +126,7 @@ describe("addContact", () => {
         email: "claire@ateliernord.fr",
         called: false,
         response: "enAttente",
+        nextFollowUp: null,
         createdAt: "2026-11-19T10:00:00.000Z",
       },
     });
@@ -202,5 +210,59 @@ describe("setResponse", () => {
   it("signale un contact introuvable", async () => {
     stored(null);
     expect(await setResponse("inconnu", "refuse")).toEqual({ ok: false, error: "Contact introuvable." });
+  });
+});
+
+describe("getContact (fiche)", () => {
+  it("renvoie le contact avec sa prochaine relance", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(record({ next_follow_up: "2026-12-03" }));
+    expect(await getContact("id-1")).toMatchObject({ id: "id-1", nextFollowUp: "2026-12-03" });
+  });
+
+  it("renvoie null pour un id inconnu", async () => {
+    vi.mocked(selectContactRecordById).mockResolvedValue(null);
+    expect(await getContact("inconnu")).toBeNull();
+  });
+});
+
+describe("setFollowUp (lot 3)", () => {
+  it("fixe la prochaine relance à une date", async () => {
+    vi.mocked(updateContactFollowUp).mockResolvedValue(record({ next_follow_up: "2026-12-03" }));
+    const r = await setFollowUp("id-1", "2026-12-03");
+    expect(updateContactFollowUp).toHaveBeenCalledWith("id-1", "2026-12-03");
+    expect(r.ok && r.contact.nextFollowUp).toBe("2026-12-03");
+  });
+
+  it("une date vide efface la relance", async () => {
+    vi.mocked(updateContactFollowUp).mockResolvedValue(record());
+    await setFollowUp("id-1", "");
+    expect(updateContactFollowUp).toHaveBeenCalledWith("id-1", null);
+  });
+
+  it("refuse une date invalide sans rien écrire", async () => {
+    expect(await setFollowUp("id-1", "2026-02-30")).toEqual({ ok: false, error: "Date invalide." });
+    expect(updateContactFollowUp).not.toHaveBeenCalled();
+  });
+
+  it("signale un contact introuvable", async () => {
+    vi.mocked(updateContactFollowUp).mockResolvedValue(null);
+    expect(await setFollowUp("inconnu", "2026-12-03")).toEqual({ ok: false, error: "Contact introuvable." });
+  });
+});
+
+describe("listDueFollowUps (lot 3)", () => {
+  it("garde les relances du jour (heure de Paris) et en retard, hors acceptés et refusés", async () => {
+    vi.mocked(selectContactRecords).mockResolvedValue([
+      record({ id: "jour", name: "Jour", next_follow_up: "2026-11-22" }),
+      record({ id: "retard", name: "Retard", next_follow_up: "2026-11-20" }),
+      record({ id: "futur", name: "Futur", next_follow_up: "2026-11-23" }),
+      record({ id: "refus", name: "Refus", called: 1, response: "refuse", next_follow_up: "2026-11-20" }),
+    ]);
+    // 23 h 30 UTC le 21 : il est 0 h 30 le 22 à Paris.
+    const due = await listDueFollowUps(new Date("2026-11-21T23:30:00Z"));
+    expect(due.map((d) => [d.contact.id, d.state])).toEqual([
+      ["retard", "enRetard"],
+      ["jour", "aujourdhui"],
+    ]);
   });
 });

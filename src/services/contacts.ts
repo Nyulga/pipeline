@@ -1,6 +1,8 @@
 import {
   insertContactRecord,
+  selectContactRecordById,
   selectContactRecords,
+  updateContactFollowUp,
   updateContactTracking,
   type ContactRecord,
 } from "@/data/contacts-repository";
@@ -10,6 +12,7 @@ import {
   type Contact,
   type ContactField,
 } from "@/services/contact-model";
+import { dueFollowUps, parseFollowUpDate, todayInParis, type DueFollowUp } from "@/services/follow-up";
 import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
 
 export {
@@ -19,6 +22,7 @@ export {
   type ContactField,
   type ContactResponse,
 } from "@/services/contact-model";
+export type { DueFollowUp, FollowUpState } from "@/services/follow-up";
 
 export type ContactInput = Partial<Record<ContactField, string | null>>;
 export type ContactErrors = Partial<Record<ContactField, string>>;
@@ -67,6 +71,7 @@ function toContact(r: ContactRecord): Contact {
     email: r.email,
     called: r.called === 1,
     response: r.response,
+    nextFollowUp: r.next_follow_up,
     createdAt: r.created_at,
   };
 }
@@ -84,6 +89,12 @@ export async function addContact(input: ContactInput): Promise<AddContactResult>
 /** Tous les contacts, du plus récent au plus ancien. */
 export async function listContacts(): Promise<Contact[]> {
   return (await selectContactRecords()).map(toContact);
+}
+
+/** Un contact par son id (sa fiche), ou null s'il n'existe pas. */
+export async function getContact(id: string): Promise<Contact | null> {
+  const record = await selectContactRecordById(id);
+  return record ? toContact(record) : null;
 }
 
 export type TrackingResult = { ok: true; contact: Contact } | { ok: false; error: string };
@@ -105,4 +116,18 @@ export async function setCalled(id: string, called: unknown): Promise<TrackingRe
 export async function setResponse(id: string, response: unknown): Promise<TrackingResult> {
   if (!isContactResponse(response)) return { ok: false, error: "Réponse inconnue." };
   return updateTracking(id, (t) => withResponse(t, response));
+}
+
+/** Fixe la prochaine relance du contact (une valeur vide l'efface). Une date invalide n'écrit rien. */
+export async function setFollowUp(id: string, date: unknown): Promise<TrackingResult> {
+  const parsed = parseFollowUpDate(date);
+  if (!parsed.ok) return parsed;
+  const updated = await updateContactFollowUp(id, parsed.value);
+  if (!updated) return { ok: false, error: "Contact introuvable." };
+  return { ok: true, contact: toContact(updated) };
+}
+
+/** « À relancer aujourd'hui » à l'instant `now` : relances du jour (heure de Paris) et en retard. */
+export async function listDueFollowUps(now: Date): Promise<DueFollowUp[]> {
+  return dueFollowUps(await listContacts(), todayInParis(now));
 }

@@ -5,6 +5,7 @@ import {
   CONTACT_FIELDS,
   addContact,
   setCalled,
+  setFollowUp,
   setResponse,
   type ContactErrors,
 } from "@/services/contacts";
@@ -45,6 +46,15 @@ export async function setCalledAction(id: unknown, called: unknown): Promise<Tra
 export async function setResponseAction(id: unknown, response: unknown): Promise<TrackingActionState> {
   if (typeof id !== "string") return INVALID;
   const r = await setResponse(id, response);
+  if (!r.ok) return r;
+  refresh();
+  return { ok: true };
+}
+
+/** Fixe (ou efface, avec une date vide) la prochaine relance d'un contact, puis rafraîchit la page affichée. */
+export async function setFollowUpAction(id: unknown, date: unknown): Promise<TrackingActionState> {
+  if (typeof id !== "string") return INVALID;
+  const r = await setFollowUp(id, date);
   if (!r.ok) return r;
   refresh();
   return { ok: true };

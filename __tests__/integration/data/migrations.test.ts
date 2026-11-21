@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { describe, expect, it } from "vitest";
-import { getDb } from "@/data/db";
+import { SCHEMA_VERSION, getDb } from "@/data/db";
 import { selectContactRecords } from "@/data/contacts-repository";
 import { setupTestDatabase } from "../helpers/test-db";
 
@@ -33,12 +33,12 @@ describe("migrations", () => {
 
     const db = await getDb();
     const { rows } = await db.execute("PRAGMA user_version");
-    expect(Number(rows[0].user_version)).toBe(2);
+    expect(Number(rows[0].user_version)).toBe(SCHEMA_VERSION);
 
     const records = await selectContactRecords();
-    expect(records.map((r) => [r.id, r.name, r.called, r.response])).toEqual([
-      ["v1-b", "Hugo Petit", 0, "enAttente"],
-      ["v1-a", "Claire Martin", 1, "accepte"],
+    expect(records.map((r) => [r.id, r.name, r.called, r.response, r.next_follow_up])).toEqual([
+      ["v1-b", "Hugo Petit", 0, "enAttente", null],
+      ["v1-a", "Claire Martin", 1, "accepte", null],
     ]);
   });
 
@@ -47,5 +47,13 @@ describe("migrations", () => {
     await expect(
       db.execute(`INSERT INTO contacts (id, name, created_at) VALUES ('x', ' ', '2026-11-03T09:00:00.000Z')`),
     ).rejects.toThrow();
+  });
+});
+
+describe("migration 3 · prochaine relance (lot 3)", () => {
+  it("refuse une relance qui n'est pas au format AAAA-MM-JJ", async () => {
+    const db = await getDb();
+    await expect(db.execute("UPDATE contacts SET next_follow_up = '03/12/2026' WHERE id = 'v1-a'")).rejects.toThrow();
+    await db.execute("UPDATE contacts SET next_follow_up = '2026-12-03' WHERE id = 'v1-a'");
   });
 });

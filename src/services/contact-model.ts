@@ -25,5 +25,7 @@ export type Contact = {
   email: string | null;
   called: boolean;
   response: ContactResponse;
+  /** Prochaine relance, un jour AAAA-MM-JJ, ou null. */
+  nextFollowUp: string | null;
   createdAt: string;
 };
