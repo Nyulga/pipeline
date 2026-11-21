@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import { StageBadge, stageStyles } from "@/components/status-badge";
+import { FollowUpBadge, StageBadge, followUpStyles, stageStyles } from "@/components/status-badge";
 import { STAGES } from "@/services/tracking";
 
 afterEach(cleanup);
@@ -24,5 +24,18 @@ describe("StageBadge : l'étape d'un contact dans le design system", () => {
   it("affiche le libellé de l'étape dans un badge", () => {
     render(createElement(StageBadge, { stage: "appeleEnAttente" }));
     expect(screen.getByText("Appelé · en attente", { selector: "[data-slot=badge]" })).toBeTruthy();
+  });
+});
+
+describe("FollowUpBadge : l'état d'une relance (lot 3)", () => {
+  it("« Aujourd'hui » et « En retard », chacun avec sa couleur du thème", () => {
+    expect(followUpStyles.aujourdhui.label).toBe("Aujourd'hui");
+    expect(followUpStyles.enRetard.label).toBe("En retard");
+    expect(followUpStyles.enRetard.className).toMatch(/destructive/);
+  });
+
+  it("affiche le libellé dans un badge", () => {
+    render(createElement(FollowUpBadge, { state: "enRetard" }));
+    expect(screen.getByText("En retard", { selector: "[data-slot=badge]" })).toBeTruthy();
   });
 });

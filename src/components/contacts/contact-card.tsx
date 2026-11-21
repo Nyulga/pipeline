@@ -1,6 +1,8 @@
 "use client";
 
-import { MailIcon, PhoneIcon, PhoneOffIcon } from "lucide-react";
+import Link from "next/link";
+import { BellIcon, MailIcon, PhoneIcon, PhoneOffIcon } from "lucide-react";
+import { formatDay } from "@/components/contacts/texts";
 import { StageBadge, statusStyles } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,7 +67,11 @@ export function ContactCard({
             {initials(c.name)}
           </div>
           <div className="min-w-0">
-            <CardTitle className="truncate font-heading text-lg">{c.name}</CardTitle>
+            <CardTitle className="truncate font-heading text-lg">
+              <Link href={`/contacts/${c.id}`} className="hover:underline">
+                {c.name}
+              </Link>
+            </CardTitle>
             <CardDescription className="truncate">{c.company ?? "Sans entreprise"}</CardDescription>
           </div>
         </div>
@@ -98,6 +104,12 @@ export function ContactCard({
               Ajouté le {dateFormat.format(new Date(c.createdAt))}
             </span>
           </div>
+        )}
+        {c.nextFollowUp && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <BellIcon aria-hidden className="size-3" />
+            Relance le {formatDay(c.nextFollowUp)}
+          </p>
         )}
         {error && (
           <p role="alert" className="text-xs text-destructive">

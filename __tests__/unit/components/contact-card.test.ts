@@ -61,6 +61,18 @@ describe("ContactCard : marquer et annuler l'appel", () => {
   });
 });
 
+describe("ContactCard : la fiche (lot 3)", () => {
+  it("le nom mène à la fiche du contact", () => {
+    show(contact({ id: "abc" }));
+    expect(screen.getByRole("link", { name: "Claire Martin" }).getAttribute("href")).toBe("/contacts/abc");
+  });
+
+  it("montre la prochaine relance quand il y en a une", () => {
+    show(contact({ nextFollowUp: "2026-12-03" }));
+    expect(screen.getByText("Relance le 3 déc. 2026")).toBeTruthy();
+  });
+});
+
 describe("ContactCard : la réponse", () => {
   it("le sélecteur de réponse montre la réponse active", () => {
     show(contact({ called: true, response: "refuse" }));

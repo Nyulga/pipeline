@@ -9,6 +9,8 @@ export type ContactRecord = {
   email: string | null;
   called: number;
   response: string;
+  /** Prochaine relance, un jour AAAA-MM-JJ, ou null. */
+  next_follow_up: string | null;
   created_at: string;
 };
 
@@ -21,7 +23,9 @@ export type NewContactRecord = {
   response: string;
 };
 
-const COLUMNS = "id, name, company, phone, email, called, response, created_at";
+const COLUMNS = "id, name, company, phone, email, called, response, next_follow_up, created_at";
+
+const INSERT_COLUMNS = "id, name, company, phone, email, called, response, created_at";
 
 function toRecord(row: Record<string, unknown>): ContactRecord {
   return {
@@ -32,6 +36,7 @@ function toRecord(row: Record<string, unknown>): ContactRecord {
     email: row.email == null ? null : String(row.email),
     called: Number(row.called),
     response: String(row.response),
+    next_follow_up: row.next_follow_up == null ? null : String(row.next_follow_up),
     created_at: String(row.created_at),
   };
 }
@@ -39,7 +44,7 @@ function toRecord(row: Record<string, unknown>): ContactRecord {
 export async function insertContactRecord(input: NewContactRecord): Promise<ContactRecord> {
   const db = await getDb();
   const { rows } = await db.execute({
-    sql: `INSERT INTO contacts (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING ${COLUMNS}`,
+    sql: `INSERT INTO contacts (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING ${COLUMNS}`,
     args: [
       crypto.randomUUID(),
       input.name,
@@ -68,6 +73,21 @@ export async function selectContactRecordById(id: string): Promise<ContactRecord
   const db = await getDb();
   const { rows } = await db.execute({ sql: `SELECT ${COLUMNS} FROM contacts WHERE id = ?`, args: [id] });
   return rows[0] ? toRecord(rows[0] as Record<string, unknown>) : null;
+}
+
+/**
+ * Fixe (ou efface, avec null) la prochaine relance du contact `id`.
+ * Renvoie la ligne modifiée, ou null si l'id est inconnu.
+ */
+export function updateContactFollowUp(id: string, date: string | null): Promise<ContactRecord | null> {
+  return oneWriteAtATime(async () => {
+    const db = await getDb();
+    const { rows } = await db.execute({
+      sql: `UPDATE contacts SET next_follow_up = ? WHERE id = ? RETURNING ${COLUMNS}`,
+      args: [date, id],
+    });
+    return rows[0] ? toRecord(rows[0] as Record<string, unknown>) : null;
+  });
 }
 
 export type TrackingRecord = { called: boolean; response: string };

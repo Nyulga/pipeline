@@ -5,8 +5,15 @@ import { setupTestDatabase } from "../helpers/test-db";
 vi.mock("next/cache", () => ({ refresh: vi.fn(), revalidatePath: vi.fn() }));
 
 import { refresh, revalidatePath } from "next/cache";
-import { addContactAction, setCalledAction, setResponseAction } from "@/app/actions";
-import { CONTACT_FIELDS, listContacts } from "@/services/contacts";
+import {
+  addContactAction,
+  addNoteAction,
+  setCalledAction,
+  setFollowUpAction,
+  setResponseAction,
+} from "@/app/actions";
+import { listNotes } from "@/services/notes";
+import { CONTACT_FIELDS, getContact, listContacts } from "@/services/contacts";
 
 setupTestDatabase();
 
@@ -44,12 +51,12 @@ describe("addContactAction (formulaire → service → base)", () => {
   });
 });
 
-describe("actions de suivi (lot 2)", () => {
-  async function created(name: string) {
-    await addContactAction(form({ name }));
-    return (await listContacts()).find((c) => c.name === name)!;
-  }
+async function created(name: string) {
+  await addContactAction(form({ name }));
+  return (await listContacts()).find((c) => c.name === name)!;
+}
 
+describe("actions de suivi (lot 2)", () => {
   it("setCalledAction marque appelé et rafraîchit la liste", async () => {
     const c = await created("Action appel");
     vi.mocked(refresh).mockClear();
@@ -78,5 +85,45 @@ describe("actions de suivi (lot 2)", () => {
     expect(await setResponseAction(c.id, "peut-etre")).toEqual({ ok: false, error: "Réponse inconnue." });
     expect(refresh).not.toHaveBeenCalled();
     expect((await listContacts()).find((x) => x.id === c.id)).toMatchObject({ called: false, response: "enAttente" });
+  });
+});
+
+describe("setFollowUpAction (lot 3)", () => {
+  it("fixe puis efface la prochaine relance, et rafraîchit la page", async () => {
+    const c = await created("Action relance");
+    vi.mocked(refresh).mockClear();
+    expect(await setFollowUpAction(c.id, "2026-12-03")).toEqual({ ok: true });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect((await getContact(c.id))?.nextFollowUp).toBe("2026-12-03");
+    expect(await setFollowUpAction(c.id, "")).toEqual({ ok: true });
+    expect((await getContact(c.id))?.nextFollowUp).toBeNull();
+  });
+
+  it("refuse un id ou une date invalides sans rien écrire ni rafraîchir", async () => {
+    const c = await created("Action relance invalide");
+    vi.mocked(refresh).mockClear();
+    expect(await setFollowUpAction(7, "2026-12-03")).toEqual({ ok: false, error: "Requête invalide." });
+    expect(await setFollowUpAction(c.id, "03/12/2026")).toEqual({ ok: false, error: "Date invalide." });
+    expect(refresh).not.toHaveBeenCalled();
+    expect((await getContact(c.id))?.nextFollowUp).toBeNull();
+  });
+});
+
+describe("addNoteAction (lot 4)", () => {
+  it("ajoute une note et rafraîchit la page", async () => {
+    const c = await created("Action note");
+    vi.mocked(refresh).mockClear();
+    expect(await addNoteAction(c.id, "Rappeler lundi")).toEqual({ ok: true });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect((await listNotes(c.id)).map((n) => n.body)).toEqual(["Rappeler lundi"]);
+  });
+
+  it("refuse un id invalide ou une note vide sans rien écrire ni rafraîchir", async () => {
+    const c = await created("Action note vide");
+    vi.mocked(refresh).mockClear();
+    expect(await addNoteAction(null, "Texte")).toEqual({ ok: false, error: "Requête invalide." });
+    expect(await addNoteAction(c.id, "  ")).toEqual({ ok: false, error: "La note ne peut pas être vide." });
+    expect(refresh).not.toHaveBeenCalled();
+    expect(await listNotes(c.id)).toEqual([]);
   });
 });

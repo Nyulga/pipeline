@@ -32,7 +32,27 @@ const MIGRATIONS: string[][] = [
      WHEN trim(NEW.name, ' ' || char(9, 10, 13)) = ''
      BEGIN SELECT RAISE(ABORT, 'contacts.name ne peut pas être vide'); END`,
   ],
+  // 3 · prochaine relance (lot 3) : un jour réel AAAA-MM-JJ, ou NULL. date(x) IS x refuse
+  // aussi bien « 03/12/2026 » que « 2026-02-30 » (date() renvoie NULL ou une autre date).
+  [
+    `ALTER TABLE contacts ADD COLUMN next_follow_up TEXT
+       CHECK (next_follow_up IS NULL OR date(next_follow_up) IS next_follow_up)`,
+    `CREATE INDEX IF NOT EXISTS contacts_next_follow_up ON contacts (next_follow_up)`,
+  ],
+  // 4 · notes datées (lot 4) : jamais vides, rattachées à un contact.
+  [
+    `CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      contact_id TEXT NOT NULL REFERENCES contacts (id) ON DELETE CASCADE,
+      body TEXT NOT NULL CHECK (trim(body, ' ' || char(9, 10, 13)) <> ''),
+      created_at TEXT NOT NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS notes_contact_created ON notes (contact_id, created_at)`,
+  ],
 ];
+
+/** Version du schéma une fois toutes les migrations passées. */
+export const SCHEMA_VERSION = MIGRATIONS.length;
 
 async function migrate(db: Client) {
   const { rows } = await db.execute("PRAGMA user_version");
