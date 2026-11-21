@@ -17,15 +17,21 @@ import {
 } from "@/components/ui/dialog";
 
 const EMPTY: ContactFormValues = { name: "", company: "", phone: "", email: "" };
-const INITIAL: AddContactState = { ok: false, errors: {} };
+/** État de la fenêtre : la réponse de l'action, plus un éventuel échec d'enregistrement. */
+type DialogState = AddContactState & { formError?: string };
+
+const INITIAL: DialogState = { ok: false, errors: {} };
+
+/** Échec inattendu (réseau, base injoignable…) : la fenêtre reste ouverte, la saisie est gardée. */
+const SAVE_FAILED: DialogState = { ok: false, errors: {}, formError: "Impossible d'enregistrer, réessaie." };
 
 export function AddContactDialog() {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(EMPTY);
 
   const [state, formAction, pending] = useActionState(
-    async (_prev: AddContactState, formData: FormData) => {
-      const result = await addContactAction(formData);
+    async (_prev: DialogState, formData: FormData): Promise<DialogState> => {
+      const result = await addContactAction(formData).catch(() => SAVE_FAILED);
       if (result.ok) {
         setValues(EMPTY);
         setOpen(false);
@@ -53,6 +59,12 @@ export function AddContactDialog() {
             errors={state.ok ? {} : state.errors}
             onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))}
           />
+
+          {state.formError && (
+            <p role="alert" className="text-sm text-destructive">
+              {state.formError}
+            </p>
+          )}
 
           <DialogFooter>
             <DialogClose render={<Button variant="outline" type="button" />}>Annuler</DialogClose>
