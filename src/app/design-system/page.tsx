@@ -44,7 +44,7 @@ const colorGroups: { title: string; tokens: { name: string; role: string }[] }[]
   {
     title: "Une couleur par étape",
     tokens: [
-      { name: "info", role: "À appeler · appelé" },
+      { name: "info", role: "À appeler" },
       { name: "warning", role: "Appelé · en attente" },
       { name: "success", role: "Accepté" },
       { name: "destructive", role: "Refusé" },

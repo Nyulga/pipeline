@@ -231,7 +231,7 @@ function ContactCard({
     <Card className="h-full">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-heading text-sm font-semibold text-secondary-foreground">
+          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-heading text-sm font-semibold text-accent-foreground">
             {initials(c.name)}
           </div>
           <div className="min-w-0">

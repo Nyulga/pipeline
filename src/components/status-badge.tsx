@@ -9,7 +9,7 @@ export type Status = CallStatus | ContactResponse;
 
 /** Libellé et couleurs de chaque statut de suivi (appel, réponse). */
 export const statusStyles: Record<Status, { label: string; className: string }> = {
-  appele: { label: "Appelé", className: "bg-info-muted text-info" },
+  appele: { label: "Appelé", className: "bg-accent text-accent-foreground" },
   nonAppele: { label: "Non appelé", className: "bg-muted text-muted-foreground" },
   accepte: { label: "Accepté", className: "bg-success-muted text-success" },
   refuse: { label: "Refusé", className: "bg-destructive-muted text-destructive" },
