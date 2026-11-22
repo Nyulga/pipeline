@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Mono, Source_Sans_3 } from "next/font/google";
+import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeToggle, themeInitScript } from "@/components/theme-toggle";
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["opsz"],
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -29,7 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${sourceSans.variable} ${fraunces.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${plexMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

@@ -62,7 +62,7 @@ export function ContactCard({
         <div className="flex items-center gap-3">
           <div
             aria-hidden
-            className="grid size-10 shrink-0 place-items-center rounded-sm bg-secondary font-heading text-sm font-semibold text-secondary-foreground"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-heading text-sm font-semibold text-accent-foreground"
           >
             {initials(c.name)}
           </div>

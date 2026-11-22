@@ -134,7 +134,7 @@ export function Simulation() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          <p className="text-sm font-semibold text-primary">
             Simulation · données fictives
           </p>
           <h1 className="text-4xl font-semibold tracking-tight">Mes contacts</h1>
@@ -231,7 +231,7 @@ function ContactCard({
     <Card className="h-full">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-sm bg-secondary font-heading text-sm font-semibold text-secondary-foreground">
+          <div className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-heading text-sm font-semibold text-secondary-foreground">
             {initials(c.name)}
           </div>
           <div className="min-w-0">

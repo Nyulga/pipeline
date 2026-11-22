@@ -15,7 +15,7 @@ Périmètre : `src/app`, `src/components`.
 - **N'utilise que les composants du design system** : les composants shadcn de
   `src/components/ui` et ceux construits dessus (ex. `StatusBadge`, `StageBadge`).
   Besoin d'un composant manquant : `pnpm shadcn add <nom>`, pas d'élément maison stylé à la main.
-- **Aucune couleur en dur.** Uniquement les tokens du thème Papier :
+- **Aucune couleur en dur.** Uniquement les tokens du thème Doux :
   `bg-primary`, `text-muted-foreground`, `border-border`, `text-success`, `bg-warning-muted`…
   Interdits : hex (`#c4622d`), `rgb()`, `hsl()`, `oklch()` et les palettes Tailwind
   (`bg-red-500`, `text-gray-600`, `bg-black`…).
