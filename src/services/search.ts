@@ -4,16 +4,21 @@
 
 import type { Contact } from "@/services/contact-model";
 
-/** Ligatures que NFD ne décompose pas. */
-const LIGATURES: Record<string, string> = { œ: "oe", æ: "ae" };
+/** Lettres que NFD ne décompose pas : ligatures et lettres barrées. */
+const UNDECOMPOSED: Record<string, string> = { œ: "oe", æ: "ae", ł: "l", ø: "o", đ: "d" };
 
-/** Minuscules, accents retirés, ligatures dépliées, espaces resserrés : « Cœur  d'Hélène » → « coeur d'helene ». */
+/**
+ * Minuscules, accents retirés, ligatures et lettres barrées dépliées, apostrophes typographiques
+ * ramenées à « ' » (iPhone et Mac remplacent ' par ’), espaces resserrés :
+ * « Cœur  d’Hélène » → « coeur d'helene ».
+ */
 export function normalizeForSearch(text: string): string {
   return text
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
     .toLowerCase()
-    .replace(/[œæ]/g, (l) => LIGATURES[l])
+    .replace(/[œæłøđ]/g, (l) => UNDECOMPOSED[l])
+    .replace(/[’‘ʼ]/g, "'")
     .replace(/\s+/g, " ")
     .trim();
 }
