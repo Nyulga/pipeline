@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/data/apply-schema.mjs"
+    "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/data/apply-schema.mjs",
+    "db:migrate:turso": "node --env-file=.env.turso.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/data/apply-schema.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
