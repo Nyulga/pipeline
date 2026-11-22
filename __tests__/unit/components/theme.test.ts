@@ -65,7 +65,7 @@ function contrast(a: [number, number, number], b: [number, number, number]): num
 
 /** Couleurs d'une pastille, posée sur `surface` : « bg-info-muted text-info », « bg-destructive/10 … ». */
 function badgeColors(className: string, theme: Theme, surface: string) {
-  if (/bdark:|btext-[a-z-]+\//.test(className))
+  if (/\bdark:|\btext-[a-z-]+\//.test(className))
     throw new Error(`pastille non vérifiable (variante dark: ou texte translucide) : ${className}`);
   const bg = className.match(/\bbg-([a-z-]+)(?:\/(\d+))?/);
   const text = className.match(/\btext-([a-z-]+)/);
