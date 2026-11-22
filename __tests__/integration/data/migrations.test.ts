@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { describe, expect, it } from "vitest";
-import { SCHEMA_VERSION, getDb } from "@/data/db";
+import { SCHEMA_VERSION, getDb, readSchemaVersion } from "@/data/db";
 import { selectContactRecords } from "@/data/contacts-repository";
 import { setupTestDatabase } from "../helpers/test-db";
 
@@ -32,8 +32,7 @@ describe("migrations", () => {
     v1.close();
 
     const db = await getDb();
-    const { rows } = await db.execute("PRAGMA user_version");
-    expect(Number(rows[0].user_version)).toBe(SCHEMA_VERSION);
+    expect(await readSchemaVersion(db)).toBe(SCHEMA_VERSION);
 
     const records = await selectContactRecords();
     expect(records.map((r) => [r.id, r.name, r.called, r.response, r.next_follow_up])).toEqual([

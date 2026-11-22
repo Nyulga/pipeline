@@ -1,8 +1,26 @@
-import { createClient, type Client } from "@libsql/client";
+import { createClient, type Client, type Config, type Transaction } from "@libsql/client";
 
-// Local : fichier libSQL (pipeline.db, ignoré par git).
-// En ligne : URL et jeton Turso via les variables d'environnement.
-// Passer de l'un à l'autre ne change que cette configuration.
+// Local : fichier SQLite (pipeline.db, ignoré par git).
+// En ligne : Turso, via DATABASE_URL et DATABASE_AUTH_TOKEN.
+// Passer de l'un à l'autre ne change que ces variables d'environnement.
+
+type Env = Readonly<Record<string, string | undefined>>;
+
+/**
+ * Connexion à ouvrir selon l'environnement. Sur Vercel, le disque est éphémère :
+ * pas de repli silencieux sur un fichier local. Les erreurs ne citent jamais les valeurs.
+ */
+export function databaseConfig(env: Env): Config {
+  const url = env.DATABASE_URL?.trim() || "";
+  const token = env.DATABASE_AUTH_TOKEN?.trim() || "";
+  if (url === "") {
+    if (env.VERCEL) throw new Error("DATABASE_URL manquante : définis l'URL de la base Turso dans les variables d'environnement Vercel.");
+    return { url: "file:pipeline.db" };
+  }
+  if (!/^(libsql|https|wss):/i.test(url)) return { url };
+  if (token === "") throw new Error("DATABASE_AUTH_TOKEN manquant : une base Turso en ligne demande son jeton d'accès.");
+  return { url, authToken: token }; // jeton lu dans process.env (DATABASE_AUTH_TOKEN), jamais en dur
+}
 
 /** Migrations versionnées : chaque entrée s'exécute une fois, dans l'ordre. */
 const MIGRATIONS: string[][] = [
@@ -54,11 +72,50 @@ const MIGRATIONS: string[][] = [
 /** Version du schéma une fois toutes les migrations passées. */
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
-async function migrate(db: Client) {
+/**
+ * Version du schéma, rangée dans la table schema_version : PRAGMA user_version est en
+ * lecture seule sur Turso Cloud. Une base locale d'avant cette table (suivie par
+ * user_version) garde sa version : rien n'est rejoué.
+ */
+export async function readSchemaVersion(db: Client | Transaction): Promise<number> {
+  const table = await db.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_version'");
+  if (table.rows.length > 0) {
+    const { rows } = await db.execute("SELECT version FROM schema_version");
+    if (rows.length > 0) return Number(rows[0].version);
+  }
   const { rows } = await db.execute("PRAGMA user_version");
-  const current = Number(rows[0]?.user_version ?? 0);
-  for (let v = current; v < MIGRATIONS.length; v++) {
-    await db.batch([...MIGRATIONS[v], `PRAGMA user_version = ${v + 1}`], "write");
+  return Number(rows[0]?.user_version ?? 0);
+}
+
+/** Ouvre une transaction d'écriture ; si une autre instance tient déjà le verrou, attend son tour. */
+async function beginWrite(db: Client, attempts = 50): Promise<Transaction> {
+  for (let i = 1; ; i++) {
+    try {
+      return await db.transaction("write");
+    } catch (e) {
+      if ((e as { code?: string }).code !== "SQLITE_BUSY" || i >= attempts) throw e;
+      await new Promise((r) => setTimeout(r, 20 * i));
+    }
+  }
+}
+
+/**
+ * Applique les migrations manquantes dans une seule transaction d'écriture. La version est
+ * relue dans la transaction : deux instances qui démarrent ensemble ne rejouent rien.
+ */
+export async function migrate(db: Client): Promise<void> {
+  if ((await readSchemaVersion(db)) >= MIGRATIONS.length) return;
+  const tx = await beginWrite(db);
+  try {
+    const current = await readSchemaVersion(tx);
+    if (current >= MIGRATIONS.length) return;
+    for (let v = current; v < MIGRATIONS.length; v++) for (const sql of MIGRATIONS[v]) await tx.execute(sql);
+    await tx.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)");
+    await tx.execute("DELETE FROM schema_version");
+    await tx.execute({ sql: "INSERT INTO schema_version (version) VALUES (?)", args: [MIGRATIONS.length] });
+    await tx.commit();
+  } finally {
+    tx.close();
   }
 }
 
@@ -66,10 +123,10 @@ let ready: { url: string; db: Promise<Client> } | null = null;
 
 /** Client unique, migré au premier accès. Recréé si DATABASE_URL change (tests). */
 export function getDb(): Promise<Client> {
-  const url = process.env.DATABASE_URL ?? "file:pipeline.db";
-  if (ready?.url !== url) {
-    const client = createClient({ url, authToken: process.env.DATABASE_AUTH_TOKEN });
-    ready = { url, db: migrate(client).then(() => client) };
+  const config = databaseConfig(process.env);
+  if (ready?.url !== config.url) {
+    const client = createClient(config);
+    ready = { url: config.url, db: migrate(client).then(() => client) };
     ready.db.catch(() => (ready = null));
   }
   return ready.db;
