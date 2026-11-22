@@ -37,3 +37,21 @@ export function formatDateTime(iso: string): string {
   const d = new Date(iso);
   return `${PARIS_DATE.format(d)} à ${PARIS_TIME.format(d)}`;
 }
+
+const GREETING_DATE = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "Europe/Paris",
+});
+
+/** « lundi 23 novembre » : le jour de l'accueil, à l'heure de Paris. */
+export function formatGreetingDate(now: Date): string {
+  return GREETING_DATE.format(now);
+}
+
+/** « Personne à rappeler », « 1 personne à rappeler », « 3 personnes à rappeler ». */
+export function toCallCount(n: number): string {
+  if (n === 0) return "Personne à rappeler";
+  return `${n} personne${n > 1 ? "s" : ""} à rappeler`;
+}
