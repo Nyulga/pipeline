@@ -42,12 +42,16 @@ const colorGroups: { title: string; tokens: { name: string; role: string }[] }[]
     ],
   },
   {
-    title: "Suivi",
+    title: "Une couleur par étape",
     tokens: [
-      { name: "info", role: "Appelé" },
+      { name: "info", role: "À appeler" },
+      { name: "warning", role: "Appelé · en attente" },
       { name: "success", role: "Accepté" },
-      { name: "warning", role: "En attente" },
       { name: "destructive", role: "Refusé" },
+      { name: "info-muted", role: "Fond « à appeler »" },
+      { name: "warning-muted", role: "Fond « en attente »" },
+      { name: "success-muted", role: "Fond « accepté »" },
+      { name: "destructive-muted", role: "Fond « refusé »" },
     ],
   },
 ];
@@ -67,13 +71,13 @@ export default function DesignSystemPage() {
   return (
     <main className="mx-auto w-full max-w-4xl space-y-10 px-4 py-12">
       <header className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+        <p className="text-sm font-semibold text-primary">
           Pipeline · design system
         </p>
-        <h1 className="text-4xl font-semibold tracking-tight">Papier</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Doux</h1>
         <p className="max-w-prose text-muted-foreground">
-          Carnet de prospection chaleureux : fond crème, encre brune, terracotta pour
-          l&apos;action. Tout ce qui suit est rendu avec les vrais tokens et composants de
+          Doux et lisible : fond lavande, cartes blanches, grands arrondis, violet pour
+          l&apos;action et une couleur douce par étape. Tout ce qui suit est rendu avec les vrais tokens et composants de
           l&apos;app ; bascule le mode sombre en haut à droite pour voir la variante.
         </p>
       </header>
@@ -81,14 +85,14 @@ export default function DesignSystemPage() {
       <Section title="Couleurs">
         {colorGroups.map((group) => (
           <div key={group.title} className="space-y-2">
-            <h3 className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+            <h3 className="text-sm font-semibold text-muted-foreground">
               {group.title}
             </h3>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {group.tokens.map((token) => (
                 <li key={token.name + token.role}>
                   <div
-                    className="h-12 rounded-md border border-border"
+                    className="h-12 rounded-xl border border-border"
                     style={{ background: `var(--${token.name})` }}
                   />
                   <p className="mt-1.5 font-mono text-xs">--{token.name}</p>
@@ -103,14 +107,14 @@ export default function DesignSystemPage() {
       <Section title="Typographie">
         <dl className="divide-y divide-dashed divide-border">
           {[
-            { label: "Titre · Fraunces", node: <p className="font-heading text-4xl font-semibold tracking-tight">Mes contacts</p> },
-            { label: "Sous-titre · Fraunces", node: <p className="font-heading text-xl font-semibold">Claire Martin</p> },
-            { label: "Corps · Source Sans 3", node: <p>Rappeler après la démo de jeudi.</p> },
+            { label: "Titre · Plus Jakarta Sans", node: <p className="font-heading text-4xl font-bold tracking-tight">Mes contacts</p> },
+            { label: "Sous-titre · Plus Jakarta Sans", node: <p className="font-heading text-xl font-semibold">Claire Martin</p> },
+            { label: "Corps · Plus Jakarta Sans", node: <p>Rappeler après la démo de jeudi.</p> },
             { label: "Légende", node: <p className="text-sm text-muted-foreground">Ajouté le 12 nov.</p> },
             { label: "Données · IBM Plex Mono", node: <p className="font-mono text-sm">06 12 34 56 78</p> },
           ].map((row) => (
             <div key={row.label} className="grid gap-1 py-3 sm:grid-cols-[12rem_1fr] sm:items-baseline">
-              <dt className="font-mono text-xs text-muted-foreground">{row.label}</dt>
+              <dt className="text-xs font-medium text-muted-foreground">{row.label}</dt>
               <dd>{row.node}</dd>
             </div>
           ))}
@@ -159,7 +163,7 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      <Section title="Statuts de suivi">
+      <Section title="Étapes et statuts">
         <div className="flex flex-wrap gap-2">
           {(Object.keys(statusStyles) as Status[]).map((status) => (
             <StatusBadge key={status} status={status} />
@@ -200,7 +204,7 @@ export default function DesignSystemPage() {
               <Button variant="outline" size="sm">
                 Marquer non appelé
               </Button>
-              <div role="group" aria-label="Réponse" className="inline-flex overflow-hidden rounded-md border border-input">
+              <div role="group" aria-label="Réponse" className="inline-flex overflow-hidden rounded-full border border-input">
                 {responses.map((r, i) => (
                   <button
                     key={r}

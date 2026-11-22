@@ -39,3 +39,11 @@ describe("FollowUpBadge : l'état d'une relance (lot 3)", () => {
     expect(screen.getByText("En retard", { selector: "[data-slot=badge]" })).toBeTruthy();
   });
 });
+
+describe("pastilles du thème Doux (lot 6)", () => {
+  it("toutes les pastilles sont rondes", () => {
+    render(createElement(StageBadge, { stage: "accepte" }));
+    render(createElement(FollowUpBadge, { state: "aujourdhui" }));
+    for (const el of document.querySelectorAll("[data-slot=badge]")) expect(el.className).toMatch(/\brounded-full\b/);
+  });
+});

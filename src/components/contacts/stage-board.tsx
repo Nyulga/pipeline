@@ -32,7 +32,7 @@ export function StageBoard({
               <span>{style.label}</span>
               <span
                 aria-label={contactCount(items.length)}
-                className="ml-auto rounded-sm bg-background px-1.5 font-mono text-xs text-muted-foreground"
+                className="ml-auto rounded-full bg-background px-2 font-mono text-xs text-muted-foreground"
               >
                 {items.length}
               </span>

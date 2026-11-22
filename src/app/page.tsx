@@ -17,7 +17,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
     <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-12">
       <header className="flex flex-wrap items-end justify-between gap-4 pr-12">
         <div className="space-y-1">
-          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Pipeline</p>
+          <p className="text-sm font-semibold text-primary">Pipeline</p>
           <h1 className="text-4xl font-semibold tracking-tight">Mes contacts</h1>
         </div>
         <div className="flex flex-wrap gap-2">
