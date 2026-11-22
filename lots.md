@@ -49,3 +49,52 @@ Un contact a un nom (obligatoire), une entreprise (texte libre), un téléphone 
 - Je clique sur « Exporter en CSV », je récupère un fichier `pipeline-contacts-AAAA-MM-JJ.csv`.
 - Il s'ouvre correctement dans Excel (accents compris) avec tous les contacts : nom, entreprise, téléphone, e-mail, appelé, réponse, étape, prochaine relance, date de création, dernière note.
 - Une valeur contenant `;`, des guillemets ou un retour à la ligne ne casse pas le fichier ; une valeur commençant par `=`, `+`, `-` ou `@` n'est pas interprétée comme une formule.
+
+---
+
+# Refonte « Doux » (lots 6 à 11)
+Plan d'ensemble : `plans/refonte-b.md`.
+
+## Lot 6 · Thème « Doux »
+Remplace le thème « Papier » (clair et sombre) : police Plus Jakarta Sans, arrondis larges, accent violet, une couleur douce par étape. Page `/design-system` mise à jour.
+
+**Critères d'acceptation**
+- Toutes les pages prennent le nouveau thème, en clair et en sombre ; aucune couleur en dur.
+- Chaque étape a sa couleur, distincte des autres, dans les deux thèmes.
+- Le texte de chaque pastille et du bouton principal reste lisible : contraste ≥ 4,5:1.
+
+## Lot 7 · Accueil « À appeler maintenant »
+**Critères d'acceptation**
+- En haut : « Bonjour », la date du jour (Paris) et le nombre de personnes à rappeler.
+- Une carte met en avant la prochaine personne à appeler, dans cet ordre : relance en retard (la plus ancienne d'abord), relance du jour, puis jamais appelé (le plus ancien ajout d'abord). Acceptés et refusés n'y sont jamais.
+- « Appeler » ouvre le numéro et marque le contact appelé ; « Accepté » et « Refusé » enregistrent la réponse.
+- « Plus tard » repousse la relance au lendemain et passe à la personne suivante.
+- Personne à appeler : un message le dit, sans carte vide.
+- Des filtres par étape, avec leur nombre, n'affichent que les contacts de l'étape ; le filtre est gardé dans l'adresse.
+
+## Lot 8 · Suivi en un geste, avec « Annuler »
+**Critères d'acceptation**
+- Sur chaque contact, un seul bouton d'étape (À appeler, Appelé · en attente, Accepté, Refusé) remplace les quatre boutons ; choisir une étape enregistre l'appel et la réponse correspondants.
+- Après chaque changement, un message « Marqué … · Annuler » reste affiché quelques secondes ; « Annuler » remet exactement le suivi d'avant.
+- Repasser en « À appeler » remet la réponse en attente ; plus de bouton grisé.
+
+## Lot 9 · Fiche dans un panneau
+**Critères d'acceptation**
+- Toucher un contact ouvre sa fiche par-dessus la liste (par le bas sur téléphone, à droite sur ordinateur), avec coordonnées, étape, relance et notes.
+- Échap ou « Fermer » referme le panneau ; la liste reste en place.
+- L'adresse devient `/?contact=<id>` : un rechargement rouvre le panneau ; `/contacts/<id>` marche toujours.
+- Ajouter une note ou changer la relance depuis le panneau met la liste à jour.
+
+## Lot 10 · Ta semaine
+**Critères d'acceptation**
+- « Appels passés » compte les contacts marqués appelés depuis lundi 0 h, heure de Paris (nouvelle colonne `called_at`, migration 5 ; les appels d'avant n'ont pas de date et ne comptent pas).
+- Taux d'acceptation = acceptés ÷ (acceptés + refusés), « — » sans aucune réponse.
+- Relances des 7 prochains jours.
+- Les chiffres se mettent à jour après chaque changement de suivi.
+
+## Lot 11 · Téléphone et finitions
+**Critères d'acceptation**
+- Sur téléphone : barre d'onglets en bas et bouton « + Ajouter » flottant ; à 390 px, aucune barre de défilement horizontale.
+- Zones à toucher d'au moins 44 px.
+- Chaque liste vide affiche un message et l'action pour la remplir ; chargements en squelette.
+- Avec « réduire les animations », aucune transition.
