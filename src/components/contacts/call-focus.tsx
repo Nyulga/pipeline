@@ -2,15 +2,16 @@
 
 import { useRef, useState, useTransition } from "react";
 import { CheckIcon, ClockIcon, PhoneIcon, XIcon } from "lucide-react";
-import { setCalledAction, setFollowUpAction, setResponseAction, type TrackingActionState } from "@/app/actions";
+import { setFollowUpAction, setStageAction, type TrackingActionState } from "@/app/actions";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { SAVE_FAILED_MESSAGE, toCallCount } from "@/components/contacts/texts";
-import { FollowUpBadge, StageBadge } from "@/components/status-badge";
+import { showUndo } from "@/components/contacts/undo-toast";
+import { FollowUpBadge, StageBadge, stageStyles } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { callQueue, nextDay, type QueueReason } from "@/services/call-queue";
-import type { Contact, ContactResponse } from "@/services/contact-model";
-import { markCalled, withResponse } from "@/services/tracking";
+import type { Contact } from "@/services/contact-model";
+import { stageOf, trackingForStage, type Stage } from "@/services/tracking";
 
 type Patch = Partial<Pick<Contact, "called" | "response" | "nextFollowUp">>;
 
@@ -66,7 +67,13 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
   const others = queue.filter((i) => i.contact.id !== current?.contact.id);
   const next = others.slice(0, 3);
 
-  function save(c: Contact, patch: Patch, pin: boolean, action: () => Promise<TrackingActionState>) {
+  function save(
+    c: Contact,
+    patch: Patch,
+    pin: boolean,
+    action: () => Promise<TrackingActionState>,
+    onSaved?: () => void,
+  ) {
     const n = ++seq.current;
     setError(null);
     setLocal((s) => ({
@@ -78,6 +85,7 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
       const r = await action().catch(() => SAVE_FAILED);
       if (r.ok) {
         setLocal((s) => ({ ...s, entries: s.entries.map((e) => (e.seq === n ? { ...e, settled: true } : e)) }));
+        onSaved?.();
         return;
       }
       // Seul ce changement est annulé : ceux qui ont réussi avant lui restent.
@@ -86,12 +94,36 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
     });
   }
 
-  const call = (c: Contact) => save(c, markCalled(c), true, () => setCalledAction(c.id, true));
-  const answer = (c: Contact, response: ContactResponse) =>
-    save(c, withResponse(c, response), false, () => setResponseAction(c.id, response));
+  /** Change l'étape ; une fois enregistrée, « Annuler » remet l'étape d'avant (la personne revient dans la file). */
+  function moveTo(c: Contact, stage: Stage, pin: boolean) {
+    const before = stageOf(c);
+    save(
+      c,
+      trackingForStage(stage),
+      pin,
+      () => setStageAction(c.id, stage),
+      () =>
+        showUndo(`${c.name} : ${stageStyles[stage].label}`, () =>
+          save(c, trackingForStage(before), false, () => setStageAction(c.id, before)),
+        ),
+    );
+  }
+
+  const call = (c: Contact) => moveTo(c, "appeleEnAttente", true);
+  const answer = (c: Contact, stage: "accepte" | "refuse") => moveTo(c, stage, false);
   const later = (c: Contact) => {
     const day = nextDay(today);
-    save(c, { nextFollowUp: day }, false, () => setFollowUpAction(c.id, day));
+    const before = c.nextFollowUp;
+    save(
+      c,
+      { nextFollowUp: day },
+      false,
+      () => setFollowUpAction(c.id, day),
+      () =>
+        showUndo(`${c.name} : relance demain`, () =>
+          save(c, { nextFollowUp: before }, false, () => setFollowUpAction(c.id, before ?? "")),
+        ),
+    );
   };
 
   return (

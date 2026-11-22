@@ -11,6 +11,7 @@ import {
   setCalledAction,
   setFollowUpAction,
   setResponseAction,
+  setStageAction,
 } from "@/app/actions";
 import { listNotes } from "@/services/notes";
 import { CONTACT_FIELDS, getContact, listContacts } from "@/services/contacts";
@@ -125,5 +126,24 @@ describe("addNoteAction (lot 4)", () => {
     expect(await addNoteAction(c.id, "  ")).toEqual({ ok: false, error: "La note ne peut pas être vide." });
     expect(refresh).not.toHaveBeenCalled();
     expect(await listNotes(c.id)).toEqual([]);
+  });
+});
+
+describe("setStageAction (lot 8)", () => {
+  it("enregistre l'étape et rafraîchit la page", async () => {
+    const c = await created("Action étape");
+    vi.mocked(refresh).mockClear();
+    expect(await setStageAction(c.id, "refuse")).toEqual({ ok: true });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect((await getContact(c.id))).toMatchObject({ called: true, response: "refuse" });
+  });
+
+  it("refuse un id ou une étape invalides sans rien écrire ni rafraîchir", async () => {
+    const c = await created("Action étape invalide");
+    vi.mocked(refresh).mockClear();
+    expect(await setStageAction(7, "accepte")).toEqual({ ok: false, error: "Requête invalide." });
+    expect(await setStageAction(c.id, "tous")).toEqual({ ok: false, error: "Étape inconnue." });
+    expect(refresh).not.toHaveBeenCalled();
+    expect((await getContact(c.id))).toMatchObject({ called: false, response: "enAttente" });
   });
 });

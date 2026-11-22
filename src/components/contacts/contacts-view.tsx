@@ -1,13 +1,15 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
-import { setCalledAction, setResponseAction, type TrackingActionState } from "@/app/actions";
+import { setStageAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
 import { StageBoard } from "@/components/contacts/stage-board";
 import { SAVE_FAILED_MESSAGE, contactCount } from "@/components/contacts/texts";
+import { showUndo } from "@/components/contacts/undo-toast";
+import { stageStyles } from "@/components/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Contact, ContactResponse } from "@/services/contact-model";
-import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
+import type { Contact } from "@/services/contact-model";
+import { stageOf, trackingForStage, type Stage, type Tracking } from "@/services/tracking";
 
 type Patch = { id: string; tracking: Tracking };
 
@@ -22,17 +24,24 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
   const [, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  function update(c: Contact, tracking: Tracking, save: () => Promise<TrackingActionState>) {
+  /** Place le contact à une étape ; `undoable` : proposer « Annuler » une fois enregistré. */
+  function changeStage(c: Contact, stage: Stage, undoable = true) {
+    const before = stageOf(c);
+    if (stage === before) return;
     startTransition(async () => {
-      applyOptimistic({ id: c.id, tracking });
+      applyOptimistic({ id: c.id, tracking: trackingForStage(stage) });
       // La mise à jour optimiste s'annule d'elle-même à la fin de la transition si rien n'a changé côté serveur.
-      const r = await save().catch(() => SAVE_FAILED);
+      const r = await setStageAction(c.id, stage).catch(() => SAVE_FAILED);
       setErrors((prev) => {
         const next = { ...prev };
         delete next[c.id];
         if (!r.ok) next[c.id] = r.error;
         return next;
       });
+      if (r.ok && undoable) {
+        const now = { ...c, ...trackingForStage(stage) };
+        showUndo(`${c.name} : ${stageStyles[stage].label}`, () => changeStage(now, before, false));
+      }
     });
   }
 
@@ -41,12 +50,7 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
       contact={c}
       compact={compact}
       error={errors[c.id]}
-      onCalledChange={(called) =>
-        update(c, called ? markCalled(c) : markNotCalled(), () => setCalledAction(c.id, called))
-      }
-      onResponseChange={(response: ContactResponse) =>
-        update(c, withResponse(c, response), () => setResponseAction(c.id, response))
-      }
+      onStageChange={(stage) => changeStage(c, stage)}
     />
   );
 

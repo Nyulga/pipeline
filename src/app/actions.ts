@@ -7,6 +7,7 @@ import {
   setCalled,
   setFollowUp,
   setResponse,
+  setStage,
   type ContactErrors,
 } from "@/services/contacts";
 import { addNote } from "@/services/notes";
@@ -47,6 +48,15 @@ export async function setCalledAction(id: unknown, called: unknown): Promise<Tra
 export async function setResponseAction(id: unknown, response: unknown): Promise<TrackingActionState> {
   if (typeof id !== "string") return INVALID;
   const r = await setResponse(id, response);
+  if (!r.ok) return r;
+  refresh();
+  return { ok: true };
+}
+
+/** Place un contact à une étape (appel et réponse ensemble), puis rafraîchit la page affichée. */
+export async function setStageAction(id: unknown, stage: unknown): Promise<TrackingActionState> {
+  if (typeof id !== "string") return INVALID;
+  const r = await setStage(id, stage);
   if (!r.ok) return r;
   refresh();
   return { ok: true };

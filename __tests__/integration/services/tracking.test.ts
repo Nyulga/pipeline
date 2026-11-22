@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addContact, listContacts, setCalled, setResponse } from "@/services/contacts";
+import { addContact, listContacts, setCalled, setResponse, setStage } from "@/services/contacts";
 import { groupByStage } from "@/services/tracking";
 import { setupTestDatabase } from "../helpers/test-db";
 
@@ -53,5 +53,33 @@ describe("suivi : service + données (critères du lot 2)", () => {
     const { closeDb } = await import("@/data/db");
     await closeDb();
     expect(await find(c.id)).toMatchObject({ called: true, response: "accepte" });
+  });
+});
+
+describe("setStage : l'étape en une écriture (lot 8)", () => {
+  it("chaque étape enregistre l'appel et la réponse correspondants", async () => {
+    const c = await newContact("Étape en un geste");
+    expect(await setStage(c.id, "accepte")).toMatchObject({ ok: true });
+    expect(await find(c.id)).toMatchObject({ called: true, response: "accepte" });
+    expect(await setStage(c.id, "appeleEnAttente")).toMatchObject({ ok: true });
+    expect(await find(c.id)).toMatchObject({ called: true, response: "enAttente" });
+    expect(await setStage(c.id, "aAppeler")).toMatchObject({ ok: true });
+    expect(await find(c.id)).toMatchObject({ called: false, response: "enAttente" });
+  });
+
+  it("« Annuler » (l'étape d'avant) redonne exactement le suivi d'avant", async () => {
+    const c = await newContact("Annuler réel");
+    await setStage(c.id, "refuse");
+    const before = await find(c.id);
+    await setStage(c.id, "aAppeler");
+    await setStage(c.id, "refuse");
+    expect(await find(c.id)).toEqual(before);
+  });
+
+  it("une étape inconnue ou un contact introuvable n'écrivent rien", async () => {
+    const c = await newContact("Étape inconnue");
+    expect(await setStage(c.id, "peut-etre")).toEqual({ ok: false, error: "Étape inconnue." });
+    expect(await setStage("inconnu", "accepte")).toEqual({ ok: false, error: "Contact introuvable." });
+    expect(await find(c.id)).toMatchObject({ called: false, response: "enAttente" });
   });
 });

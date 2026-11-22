@@ -31,11 +31,19 @@ export function markNotCalled(): Tracking {
 }
 
 /**
- * Annuler l'appel ne doit jamais effacer une réponse sans qu'on le veuille :
- * possible seulement pour un contact appelé dont la réponse est encore « en attente ».
+ * L'appel et la réponse d'une étape : l'inverse exact de stageOf.
+ * Revenir à l'étape d'avant redonne donc exactement le suivi d'avant (« Annuler »).
  */
-export function canCancelCall({ called, response }: Tracking): boolean {
-  return called && response === "enAttente";
+export function trackingForStage(stage: Stage): Tracking {
+  switch (stage) {
+    case "aAppeler":
+      return markNotCalled();
+    case "appeleEnAttente":
+      return { called: true, response: "enAttente" };
+    case "accepte":
+    case "refuse":
+      return { called: true, response: stage };
+  }
 }
 
 /** « Accepté » ou « refusé » marque aussi le contact appelé ; « en attente » ne change pas l'appel. */

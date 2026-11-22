@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   STAGES,
-  canCancelCall,
   groupByStage,
   markCalled,
   markNotCalled,
   parseStage,
   stageOf,
+  trackingForStage,
   withResponse,
   type Tracking,
 } from "@/services/tracking";
@@ -66,18 +66,24 @@ describe("règles de suivi", () => {
   });
 });
 
-describe("canCancelCall : annuler l'appel ne doit jamais effacer une réponse", () => {
-  it("possible pour un contact appelé encore en attente", () => {
-    expect(canCancelCall(t(true, "enAttente"))).toBe(true);
+describe("trackingForStage : l'appel et la réponse de chaque étape (lot 8)", () => {
+  it.each([
+    ["aAppeler", false, "enAttente"],
+    ["appeleEnAttente", true, "enAttente"],
+    ["accepte", true, "accepte"],
+    ["refuse", true, "refuse"],
+  ] as const)("%s → appelé %s, réponse %s", (stage, called, response) => {
+    expect(trackingForStage(stage)).toEqual(t(called, response));
   });
 
-  it("impossible tant que le contact a une réponse « accepté » ou « refusé »", () => {
-    expect(canCancelCall(t(true, "accepte"))).toBe(false);
-    expect(canCancelCall(t(true, "refuse"))).toBe(false);
+  it("est l'inverse exact de stageOf : revenir à l'étape d'avant redonne le suivi d'avant", () => {
+    for (const s of STAGES) expect(stageOf(trackingForStage(s))).toBe(s);
+    for (const before of [t(false, "enAttente"), t(true, "enAttente"), t(true, "accepte"), t(true, "refuse")])
+      expect(trackingForStage(stageOf(before))).toEqual(before);
   });
 
-  it("sans objet pour un contact pas encore appelé", () => {
-    expect(canCancelCall(t(false, "enAttente"))).toBe(false);
+  it("repasser en « À appeler » remet la réponse en attente, depuis n'importe quelle étape", () => {
+    expect(trackingForStage("aAppeler")).toEqual(t(false, "enAttente"));
   });
 });
 
