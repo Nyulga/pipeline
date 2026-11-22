@@ -27,8 +27,8 @@ pnpm test:unit __tests__/unit/architecture/layers.test.ts
 # 2. Imports interdits signalés par ESLint
 pnpm lint
 
-# 3. Aucun secret en dur — doit ne rien afficher
-grep -rnEi "(authToken|libsql://|turso\.io)" src/data | grep -v "process\.env"
+# 3. Aucun secret en dur (jeton écrit en clair, URL de base réelle) — doit ne rien afficher
+grep -rnEi "authToken\s*:\s*['\"\`]|libsql://|turso\.io" src/data
 
 # 4. Les tests d'intégration passent
 pnpm test:integration

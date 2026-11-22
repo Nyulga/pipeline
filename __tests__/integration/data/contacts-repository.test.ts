@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { closeDb, getDb } from "@/data/db";
+import { SCHEMA_VERSION, closeDb, getDb, readSchemaVersion } from "@/data/db";
 import {
   insertContactRecord,
   selectContactRecordById,
@@ -16,8 +16,7 @@ const base = { company: null, phone: null, email: null, called: false, response:
 describe("contacts-repository (libSQL réel)", () => {
   it("crée le schéma à la première connexion", async () => {
     const db = await getDb();
-    const { rows } = await db.execute("PRAGMA user_version");
-    expect(Number(rows[0].user_version)).toBeGreaterThanOrEqual(1);
+    expect(await readSchemaVersion(db)).toBe(SCHEMA_VERSION);
   });
 
   it("insère un contact et le relit, avec id et date de création", async () => {
