@@ -29,6 +29,24 @@ describe("migrations sans PRAGMA user_version", () => {
     db.close();
   });
 
+  it("une base locale complète d'avant schema_version (user_version à jour) ne rejoue rien et garde ses données", async () => {
+    const db = createClient({ url: fileUrl("ancienne.db") });
+    await migrate(db);
+    await db.batch(
+      [
+        "DROP TABLE schema_version",
+        `PRAGMA user_version = ${SCHEMA_VERSION}`,
+        "INSERT INTO contacts (id, name, created_at) VALUES ('old', 'Claire Martin', '2026-11-01T09:00:00.000Z')",
+      ],
+      "write",
+    );
+    await expect(migrate(db)).resolves.toBeUndefined(); // sans repli : ALTER TABLE rejoué → « duplicate column »
+    expect(await readSchemaVersion(db)).toBe(SCHEMA_VERSION);
+    const { rows } = await db.execute("SELECT name FROM contacts");
+    expect(rows.map((r) => r.name)).toEqual(["Claire Martin"]);
+    db.close();
+  });
+
   it("deux instances qui démarrent ensemble ne rejouent pas les migrations", async () => {
     const url = fileUrl("concurrente.db");
     const a = createClient({ url });

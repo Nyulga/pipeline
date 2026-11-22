@@ -13,13 +13,14 @@ type Env = Readonly<Record<string, string | undefined>>;
 export function databaseConfig(env: Env): Config {
   const url = env.DATABASE_URL?.trim() || "";
   const token = env.DATABASE_AUTH_TOKEN?.trim() || "";
-  if (url === "") {
-    if (env.VERCEL) throw new Error("DATABASE_URL manquante : définis l'URL de la base Turso dans les variables d'environnement Vercel.");
-    return { url: "file:pipeline.db" };
-  }
-  if (!/^(libsql|https|wss):/i.test(url)) return { url };
-  if (token === "") throw new Error("DATABASE_AUTH_TOKEN manquant : une base Turso en ligne demande son jeton d'accès.");
-  return { url, authToken: token }; // jeton lu dans process.env (DATABASE_AUTH_TOKEN), jamais en dur
+  const local = url === "" || url === ":memory:" || /^file:/i.test(url);
+  if (env.VERCEL && local)
+    throw new Error("DATABASE_URL manquante ou locale : sur Vercel, définis l'URL de la base Turso (le disque y est éphémère).");
+  if (url === "") return { url: "file:pipeline.db" };
+  if (local) return { url };
+  if (token === "" && /^(libsql|https|wss):/i.test(url))
+    throw new Error("DATABASE_AUTH_TOKEN manquant : une base Turso en ligne demande son jeton d'accès.");
+  return token === "" ? { url } : { url, authToken: token };
 }
 
 /** Migrations versionnées : chaque entrée s'exécute une fois, dans l'ordre. */

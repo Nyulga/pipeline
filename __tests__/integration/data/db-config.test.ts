@@ -39,6 +39,19 @@ describe("databaseConfig : SQLite en local, Turso en ligne", () => {
     });
   });
 
+  it("sur Vercel, refuse aussi une base en fichier local", () => {
+    expect(() => databaseConfig({ VERCEL: "1", DATABASE_URL: "file:pipeline.db" })).toThrow(/DATABASE_URL/);
+    expect(() => databaseConfig({ VERCEL: "1", DATABASE_URL: ":memory:" })).toThrow(/DATABASE_URL/);
+  });
+
+  it("serveur libSQL auto-hébergé en http/ws : le jeton est transmis s'il est fourni, sans être exigé", () => {
+    expect(databaseConfig({ DATABASE_URL: "http://127.0.0.1:8080", DATABASE_AUTH_TOKEN: TOKEN })).toEqual({
+      url: "http://127.0.0.1:8080",
+      authToken: TOKEN,
+    });
+    expect(databaseConfig({ DATABASE_URL: "ws://127.0.0.1:8080" })).toEqual({ url: "ws://127.0.0.1:8080" });
+  });
+
   it("ignore les espaces autour des valeurs (copier-coller depuis le tableau de bord)", () => {
     expect(databaseConfig({ DATABASE_URL: ` ${REMOTE}\n`, DATABASE_AUTH_TOKEN: ` ${TOKEN} ` })).toEqual({
       url: REMOTE,
