@@ -37,6 +37,17 @@ describe("matchesSearch : une partie du nom, de l'entreprise, du téléphone, de
     expect(matchesSearch(contact(), [], q)).toBe(true);
   });
 
+  it("ramène les apostrophes typographiques à l'apostrophe droite (#11)", () => {
+    expect(normalizeForSearch("d’Éole d‘ici dʼabord")).toBe("d'eole d'ici d'abord");
+    expect(matchesSearch(contact({ company: "Café d’Éole" }), [], "cafe d'eole")).toBe(true);
+    expect(matchesSearch(contact({ company: "Café d'Éole" }), [], "cafe d’eole")).toBe(true);
+  });
+
+  it("déplie les lettres barrées que NFD ne décompose pas : ł, ø, đ (#11)", () => {
+    expect(normalizeForSearch("Łódź Øresund Đakovo")).toBe("lodz oresund dakovo");
+    expect(matchesSearch(contact({ company: "Łódź" }), [], "lodz")).toBe(true);
+  });
+
   it("« coeur de » trouve « Cœur  de Lyon »", () => {
     expect(matchesSearch(contact({ company: "Cœur  de Lyon" }), [], "coeur de")).toBe(true);
   });
