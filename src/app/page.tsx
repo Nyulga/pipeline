@@ -5,12 +5,14 @@ import { ContactSearch } from "@/components/contacts/contact-search";
 import { ExportButton } from "@/components/contacts/export-button";
 import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
 import { Today, TodayGreeting, TodayGreetingSkeleton, TodaySkeleton } from "@/components/contacts/today";
+import { parseStage } from "@/services/tracking";
 
 type SearchParams = Promise<{ q?: string | string[]; etape?: string | string[] }>;
 
 async function SearchBox({ searchParams }: { searchParams: SearchParams }) {
-  const { q } = await searchParams;
-  return <ContactSearch query={(Array.isArray(q) ? q[0] : q)?.trim() ?? ""} />;
+  const { q, etape } = await searchParams;
+  const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+  return <ContactSearch query={first(q)?.trim() ?? ""} stage={parseStage(first(etape))} />;
 }
 
 export default function Home({ searchParams }: { searchParams: SearchParams }) {

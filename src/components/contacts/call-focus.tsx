@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { CheckIcon, ClockIcon, PhoneIcon, XIcon } from "lucide-react";
 import { setCalledAction, setFollowUpAction, setResponseAction, type TrackingActionState } from "@/app/actions";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
@@ -14,8 +14,15 @@ import { markCalled, withResponse } from "@/services/tracking";
 
 type Patch = Partial<Pick<Contact, "called" | "response" | "nextFollowUp">>;
 
-/** Changements faits ici, appliqués par-dessus la liste reçue du serveur jusqu'à sa prochaine version. */
-type Local = { base: Contact[]; patches: Record<string, Patch>; pinned: string | null };
+/** Un changement fait ici ; `settled` une fois son action terminée avec succès. */
+type Entry = { seq: number; id: string; patch: Patch; settled: boolean };
+
+/**
+ * Changements faits ici, appliqués dans l'ordre par-dessus la liste reçue du serveur.
+ * Un changement enregistré disparaît à la version suivante de la liste (elle le contient) ;
+ * un changement encore en cours y survit, pour que la carte ne change pas sous le doigt.
+ */
+type Local = { base: Contact[]; entries: Entry[]; pinned: string | null };
 
 const SAVE_FAILED: TrackingActionState = { ok: false, error: SAVE_FAILED_MESSAGE };
 
@@ -33,18 +40,21 @@ const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
  * Après « Appeler », la carte reste sur la personne jusqu'à l'issue (Accepté, Refusé, Plus tard).
  */
 export function CallFocus({ contacts, today }: { contacts: Contact[]; today: string }) {
-  const [local, setLocal] = useState<Local>({ base: contacts, patches: {}, pinned: null });
+  const [local, setLocal] = useState<Local>({ base: contacts, entries: [], pinned: null });
+  const seq = useRef(0);
   const [error, setError] = useState<{ id: string; message: string } | null>(null);
   const [, startTransition] = useTransition();
 
-  // Nouvelle liste du serveur : elle fait foi, les changements locaux sont repartis avec elle.
+  // Nouvelle liste du serveur : elle fait foi pour tout ce qui est déjà enregistré.
   let state = local;
   if (local.base !== contacts) {
-    state = { base: contacts, patches: {}, pinned: local.pinned };
+    state = { ...local, base: contacts, entries: local.entries.filter((e) => !e.settled) };
     setLocal(state);
   }
 
-  const list = contacts.map((c) => (state.patches[c.id] ? { ...c, ...state.patches[c.id] } : c));
+  const list = contacts.map((c) =>
+    state.entries.reduce((acc, e) => (e.id === c.id ? { ...acc, ...e.patch } : acc), c),
+  );
   const queue = callQueue(list, today);
   // La personne qu'on vient d'appeler reste affichée, même si l'appel l'a sortie de la file.
   const pinnedContact = list.find(
@@ -57,20 +67,21 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
   const next = others.slice(0, 3);
 
   function save(c: Contact, patch: Patch, pin: boolean, action: () => Promise<TrackingActionState>) {
+    const n = ++seq.current;
     setError(null);
     setLocal((s) => ({
       ...s,
-      patches: { ...s.patches, [c.id]: { ...s.patches[c.id], ...patch } },
+      entries: [...s.entries, { seq: n, id: c.id, patch, settled: false }],
       pinned: pin ? c.id : s.pinned === c.id ? null : s.pinned,
     }));
     startTransition(async () => {
       const r = await action().catch(() => SAVE_FAILED);
-      if (r.ok) return;
-      setLocal((s) => {
-        const patches = { ...s.patches };
-        delete patches[c.id];
-        return { ...s, patches, pinned: c.id };
-      });
+      if (r.ok) {
+        setLocal((s) => ({ ...s, entries: s.entries.map((e) => (e.seq === n ? { ...e, settled: true } : e)) }));
+        return;
+      }
+      // Seul ce changement est annulé : ceux qui ont réussi avant lui restent.
+      setLocal((s) => ({ ...s, entries: s.entries.filter((e) => e.seq !== n), pinned: c.id }));
       setError({ id: c.id, message: r.error });
     });
   }
@@ -85,7 +96,7 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
 
   return (
     <section aria-label="À appeler maintenant" className="space-y-3">
-      <p className="text-lg font-semibold text-muted-foreground">{toCallCount(queue.length)}</p>
+      <p className="text-lg font-semibold text-muted-foreground">{toCallCount(others.length + (current ? 1 : 0))}</p>
 
       {!current ? (
         <Card>

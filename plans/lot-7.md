@@ -43,3 +43,11 @@ Issue #15. Pas de changement de base : tout s'appuie sur l'appel, la réponse et
 | « Plus tard » : lendemain et personne suivante | `call-queue.test.ts` (`nextDay`), `call-focus.test.ts` (action avec le lendemain, la suivante s'affiche), intégration `call-queue.test.ts` | service, présentation, données |
 | Personne à appeler : message, pas de carte vide | `call-focus.test.ts` | présentation |
 | Filtre : seuls les contacts de l'étape, nombres justes, gardé dans l'adresse | `stage-filter.test.ts` (liens `?etape=` avec `q`, nombres) ; `contact-list.test.ts` (liste filtrée) ; `tracking.test.ts` (`parseStage`) | présentation + service |
+
+## Après la revue de la PR #21
+- La recherche garde le filtre d'étape : un champ caché `etape` est envoyé avec la recherche, et « Effacer la recherche » garde l'étape.
+- `CallFocus` : chaque changement local a sa propre entrée.
+  - Une nouvelle liste du serveur ne retire que les changements déjà enregistrés ; ceux en cours restent.
+  - Un échec n'annule que son propre changement.
+  - Le nombre à rappeler compte la personne affichée.
+- **Assumé** : un contact appelé, en attente et sans relance sort de la file au rechargement. C'est la règle choisie : c'est à l'utilisateur de lui fixer une relance (« Plus tard » ou fiche). Le lot 8, avec « Annuler », et le panneau du lot 9 rendront cela plus visible.

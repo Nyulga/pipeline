@@ -103,3 +103,48 @@ describe("CallFocus : la prochaine personne à appeler (lot 7)", () => {
     expect(within(focus()).getByRole("button", { name: "Ajouter un contact" })).toBeTruthy();
   });
 });
+
+/** Réponse du serveur « en vol », que le test résout quand il veut. */
+function pending<T>() {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((r) => (resolve = r));
+  return { promise, resolve };
+}
+
+describe("CallFocus : quand le serveur renvoie la liste (revue de la PR #21)", () => {
+  const a = makeContact({ id: "a", name: "Alice", createdAt: "2026-11-01T09:00:00.000Z" });
+  const b = makeContact({ id: "b", name: "Bruno", createdAt: "2026-11-02T09:00:00.000Z" });
+  const c = makeContact({ id: "c", name: "Chloé", createdAt: "2026-11-03T09:00:00.000Z" });
+
+  it("une liste rafraîchie pour A ne fait pas revenir B, encore en cours d'enregistrement", async () => {
+    const forB = pending<{ ok: true }>();
+    vi.mocked(setFollowUpAction).mockResolvedValueOnce({ ok: true }).mockReturnValueOnce(forB.promise);
+    const view = render(createElement(CallFocus, { contacts: [a, b, c], today: TODAY }));
+    await press("Plus tard"); // Alice, enregistré
+    await press("Plus tard"); // Bruno, en vol
+    expect(current()).toBe("Chloé");
+    // Le serveur renvoie la liste après l'enregistrement d'Alice seulement.
+    view.rerender(createElement(CallFocus, { contacts: [{ ...a, nextFollowUp: "2026-11-24" }, b, c], today: TODAY }));
+    expect(current()).toBe("Chloé");
+    await act(async () => forB.resolve({ ok: true }));
+  });
+
+  it("la personne appelée reste affichée après le rafraîchissement, et le nombre compte la carte", async () => {
+    const view = render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    expect(screen.getByText("1 personne à rappeler")).toBeTruthy();
+    view.rerender(createElement(CallFocus, { contacts: [{ ...fresh, called: true }], today: TODAY }));
+    expect(current()).toBe("Thomas Bernard");
+    expect(screen.getByText("1 personne à rappeler")).toBeTruthy();
+  });
+
+  it("un échec n'annule que son propre changement : l'appel déjà enregistré reste", async () => {
+    vi.mocked(setResponseAction).mockResolvedValue({ ok: false, error: "Réponse invalide." });
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    await press("Accepté");
+    expect(current()).toBe("Thomas Bernard");
+    expect(within(focus()).getByText("Appelé · en attente")).toBeTruthy();
+    expect(within(focus()).getByRole("alert").textContent).toBe("Réponse invalide.");
+  });
+});

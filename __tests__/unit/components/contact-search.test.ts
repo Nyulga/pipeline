@@ -29,3 +29,21 @@ describe("ContactSearch : retrouver un contact (lot 4)", () => {
     expect(screen.getByLabelText("Rechercher")).toHaveProperty("value", "");
   });
 });
+
+describe("ContactSearch : la recherche garde le filtre d'étape (lot 7)", () => {
+  it("envoie l'étape en cours avec la recherche", () => {
+    render(createElement(ContactSearch, { query: "", stage: "accepte" }));
+    const hidden = screen.getByRole("search").querySelector("input[type=hidden][name=etape]");
+    expect(hidden?.getAttribute("value")).toBe("accepte");
+  });
+
+  it("« Effacer la recherche » garde l'étape", () => {
+    render(createElement(ContactSearch, { query: "nord", stage: "refuse" }));
+    expect(screen.getByRole("link", { name: "Effacer la recherche" }).getAttribute("href")).toBe("/?etape=refuse");
+  });
+
+  it("sans étape, pas de champ caché", () => {
+    render(createElement(ContactSearch, { query: "" }));
+    expect(screen.getByRole("search").querySelector("input[name=etape]")).toBeNull();
+  });
+});
