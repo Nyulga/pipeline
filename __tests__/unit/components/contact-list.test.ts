@@ -26,3 +26,28 @@ describe("ContactListContent : la liste, filtrée ou non (lot 4)", () => {
     expect(screen.getByRole("listitem", { name: "Claire Martin" })).toBeTruthy();
   });
 });
+
+describe("ContactListContent : filtre par étape (lot 7)", () => {
+  const contacts = [
+    makeContact({ name: "Ana" }),
+    makeContact({ name: "Bruno", called: true, response: "accepte" }),
+    makeContact({ name: "Chloé", called: true }),
+  ];
+
+  it("n'affiche que les contacts de l'étape choisie, et les pastilles comptent tout", () => {
+    render(createElement(ContactListContent, { contacts, query: "", stage: "accepte" }));
+    expect(screen.getAllByRole("listitem").map((li) => li.getAttribute("aria-label"))).toEqual(["Bruno"]);
+    expect(screen.getByRole("link", { name: /^Tous/ }).textContent).toBe("Tous3");
+  });
+
+  it("une étape sans contact le dit", () => {
+    render(createElement(ContactListContent, { contacts, query: "", stage: "refuse" }));
+    expect(screen.getByText("Aucun contact à l'étape « Refusé »."))
+      .toBeTruthy();
+  });
+
+  it("sans étape, tous les contacts", () => {
+    render(createElement(ContactListContent, { contacts, query: "" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+});

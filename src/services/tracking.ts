@@ -49,3 +49,8 @@ export function groupByStage<T extends Tracking>(contacts: readonly T[]): Record
   for (const c of contacts) groups[stageOf(c)].push(c);
   return groups;
 }
+
+/** L'étape lue dans l'adresse (`?etape=`) : une étape connue, sinon null (« Tous »). */
+export function parseStage(value: unknown): Stage | null {
+  return typeof value === "string" && (STAGES as readonly string[]).includes(value) ? (value as Stage) : null;
+}

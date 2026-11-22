@@ -5,6 +5,7 @@ import {
   groupByStage,
   markCalled,
   markNotCalled,
+  parseStage,
   stageOf,
   withResponse,
   type Tracking,
@@ -95,5 +96,14 @@ describe("groupByStage", () => {
       accepte: ["b"],
       refuse: [],
     });
+  });
+});
+
+describe("parseStage : l'étape lue dans l'adresse (lot 7)", () => {
+  it("reconnaît chaque étape", () => {
+    for (const s of STAGES) expect(parseStage(s)).toBe(s);
+  });
+  it.each([undefined, null, "", "tous", "ACCEPTE", ["accepte"], 3])("%j → null (« Tous »)", (v) => {
+    expect(parseStage(v)).toBeNull();
   });
 });
