@@ -36,6 +36,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: "cn-toast",
+          // Bouton « Annuler » : 44 px au doigt (sonner le fixe à 24 px).
+          actionButton: "pointer-coarse:min-h-11",
         },
       }}
       {...props}

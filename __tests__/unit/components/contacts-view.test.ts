@@ -6,6 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Les Server Actions et les notifications sont remplacées : on teste l'écran, pas le serveur.
 vi.mock("@/app/actions", () => ({ setStageAction: vi.fn() }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { dismiss: vi.fn() }) }));
+// Changer de vue passe par le routeur (revue de la PR #25).
+const replace = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 
 import { toast } from "sonner";
 import { setStageAction } from "@/app/actions";
@@ -173,11 +176,8 @@ describe("ContactsView : le suivi en un geste (lot 8)", () => {
   });
 
   it("l'onglet « Par étape » affiche les colonnes avec chaque contact à sa place", async () => {
-    render(createElement(ContactsView, { contacts }));
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("tab", { name: "Par étape" }));
-    });
+    // Depuis le lot 11, l'onglet change l'adresse (`?vue=etapes`) et la page se rend à nouveau avec cette vue.
+    render(createElement(ContactsView, { contacts, view: "etapes" }));
 
     const column = (label: string) => screen.getByRole("region", { name: new RegExp(`^${label}`) });
     expect(within(column("À appeler")).getByText("Ana")).toBeTruthy();
@@ -195,17 +195,30 @@ describe("ContactsView : la vue vit dans l'adresse (lot 11)", () => {
     expect(screen.getByRole("region", { name: /^Accepté/ })).toBeTruthy();
   });
 
-  it("changer de vue l'écrit dans l'adresse, en gardant le reste", async () => {
+  it("changer de vue l'écrit dans l'adresse par le routeur (la page se rend à nouveau), en gardant le reste", async () => {
+    replace.mockReset();
     window.history.replaceState(null, "", "/?q=nord&etape=accepte");
-    render(createElement(ContactsView, { contacts }));
+    const { rerender } = render(createElement(ContactsView, { contacts }));
     await act(async () => {
       fireEvent.click(screen.getByRole("tab", { name: "Par étape" }));
     });
-    expect(window.location.search).toBe("?q=nord&etape=accepte&vue=etapes");
+    expect(replace).toHaveBeenLastCalledWith("/?q=nord&etape=accepte&vue=etapes", { scroll: false });
+
+    rerender(createElement(ContactsView, { contacts, view: "etapes" }));
     await act(async () => {
       fireEvent.click(screen.getByRole("tab", { name: "Liste" }));
     });
-    expect(window.location.search).toBe("?q=nord&etape=accepte");
+    expect(replace).toHaveBeenLastCalledWith("/?q=nord&etape=accepte", { scroll: false });
+  });
+
+  it("après un changement de vue, une navigation qui ramène la liste l'affiche (revue de la PR #25)", async () => {
+    const { rerender } = render(createElement(ContactsView, { contacts }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Par étape" }));
+    });
+    rerender(createElement(ContactsView, { contacts, view: "etapes" }));
+    rerender(createElement(ContactsView, { contacts, view: "liste" }));
+    expect(screen.getByRole("tab", { name: "Liste" }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("le lien qui ouvre la fiche garde la vue en cours", () => {

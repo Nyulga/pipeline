@@ -6,7 +6,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/actions", () => ({ setStageAction: vi.fn() }));
 
+import { toast } from "sonner";
+import { BackToContacts } from "@/components/contacts/back-to-contacts";
 import { ContactCard } from "@/components/contacts/contact-card";
+import { TOUCH_TARGET } from "@/components/touch-target";
+import { Toaster } from "@/components/ui/sonner";
 import { ContactSearch } from "@/components/contacts/contact-search";
 import { StageFilter } from "@/components/contacts/stage-filter";
 import { Button } from "@/components/ui/button";
@@ -55,7 +59,8 @@ describe("zones à toucher ≥ 44 px sur écran tactile (lot 11)", () => {
       ),
     );
     expect(screen.getByRole("tab").className).toContain(TALL);
-    expect(screen.getByRole("tablist").className).toContain(TALL);
+    // La liste a 3 px de marge autour de l'onglet : elle prend 44 px + 6 px (revue de la PR #25).
+    expect(screen.getByRole("tablist").className).toContain("pointer-coarse:min-h-[calc(2.75rem+6px)]");
   });
 
   it("carte de contact : nom, téléphone, e-mail et éléments du menu d'étape", async () => {
@@ -68,6 +73,24 @@ describe("zones à toucher ≥ 44 px sur écran tactile (lot 11)", () => {
       fireEvent.click(screen.getByRole("button", { name: /^Étape de Claire Martin/ }));
     });
     for (const item of screen.getAllByRole("menuitemradio")) expect(item.className).toContain(TALL);
+  });
+
+  it("le bouton « Annuler » du message (revue de la PR #25)", async () => {
+    render(createElement(Toaster));
+    await act(async () => {
+      toast("Ana : Accepté", { action: { label: "Annuler", onClick: () => {} } });
+    });
+    expect((await screen.findByRole("button", { name: "Annuler" })).className).toContain(TALL);
+  });
+
+  it("le lien de retour « Mes contacts » de la page de fiche (revue de la PR #25)", () => {
+    render(createElement(BackToContacts));
+    expect(screen.getByRole("link", { name: "Mes contacts" }).className).toContain(TALL);
+  });
+
+  it("un lien au doigt reste sur une ligne normale : hauteur minimale, pas d'interligne de 44 px (revue de la PR #25)", () => {
+    expect(TOUCH_TARGET).toContain(TALL);
+    expect(TOUCH_TARGET).not.toContain("leading-11");
   });
 
   it("pastilles d'étape et « Effacer la recherche »", () => {

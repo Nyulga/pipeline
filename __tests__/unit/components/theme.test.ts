@@ -162,5 +162,8 @@ describe("« Réduire les animations » (lot 11)", () => {
     expect(rule).toMatch(/animation-iteration-count:\s*1\s*!important/);
     expect(rule).toMatch(/transition-duration:\s*0\.01ms\s*!important/);
     expect(rule).toMatch(/scroll-behavior:\s*auto\s*!important/);
+    // Et sans délai avant le départ (revue de la PR #25).
+    expect(rule).toMatch(/animation-delay:\s*0s\s*!important/);
+    expect(rule).toMatch(/transition-delay:\s*0s\s*!important/);
   });
 });

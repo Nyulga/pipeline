@@ -48,3 +48,10 @@ Issue #19. Pas de changement de base ni de service : tout est dans la présentat
 - Changer de vue (Liste / Par étape) réécrit l'adresse sans recharger (`history.replaceState`), ce que Next suit.
 - Le message « Annuler » remonte au-dessus de la barre et de « + Ajouter » sous 600 px (seuil « mobile » de sonner) ; entre 600 et 768 px, il garde sa place habituelle.
 - Vérification à 390 px : l'extension Chrome n'a pas répondu, elle reste à faire dans un navigateur.
+
+## Après la revue de la PR #25
+- **Vue et adresse d'accord** : changer de vue passe par `router.replace` (la page se rend à nouveau, donc filtres, recherche et liens gardent la bonne vue) ; l'onglet s'affiche tout de suite (`useOptimistic`).
+- **390 px** : grilles en `grid-cols-1`, `min-w-0` sur les cartes, les colonnes et la ligne du nom. Mesuré dans Chrome sans fenêtre, écran tactile simulé, avec un nom, une entreprise et un e-mail très longs : largeur de page 390 px et aucun élément qui dépasse (liste, Par étape, panneau, fiche).
+- **44 px** aussi pour le bouton « Annuler » du message et le lien « Mes contacts » de la fiche ; liens au doigt en `inline-flex` + `min-h-11` (plus d'interligne de 44 px) ; la liste d'onglets prend 44 px + sa marge.
+- **Barre** : rechargée sur `#mes-contacts`, elle allume « Contacts » ou « Étapes ».
+- **Réduire les animations** : délais coupés aussi.

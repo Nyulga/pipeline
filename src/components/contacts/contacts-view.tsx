@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { setStageAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
 import { contactPanelHref, parseView, type View } from "@/components/contacts/contact-links";
@@ -30,31 +31,32 @@ export function ContactsView({
   /** Vue lue dans l'adresse (`?vue=etapes`, lot 11). */
   view?: View;
 }) {
-  // La vue affichée : celle de l'adresse, puis celle choisie ici. Une nouvelle vue venue
-  // du serveur (onglet « Étapes » du téléphone) remplace le choix local.
-  const [tab, setTab] = useState<View>(view);
-  const [viewFromServer, setViewFromServer] = useState<View>(view);
-  if (view !== viewFromServer) {
-    setViewFromServer(view);
-    setTab(view);
-  }
-
-  /** Changer de vue l'écrit dans l'adresse, sans recharger ni faire défiler. */
-  function chooseView(value: unknown) {
-    const next = parseView(typeof value === "string" ? value : null);
-    setTab(next);
-    const params = new URLSearchParams(window.location.search);
-    if (next === "etapes") params.set("vue", "etapes");
-    else params.delete("vue");
-    const s = params.toString();
-    window.history.replaceState(null, "", `${window.location.pathname}${s ? `?${s}` : ""}${window.location.hash}`);
-  }
+  const router = useRouter();
+  // La vue affichée est celle de l'adresse ; le choix fait ici s'affiche tout de suite,
+  // le temps que la page se rende à nouveau avec la nouvelle adresse.
+  const [tab, showTab] = useOptimistic(view);
 
   // Mise à jour optimiste avec les mêmes règles que le service ; le serveur reste la référence.
   const [optimistic, applyOptimistic] = useOptimistic(contacts, (list: Contact[], p: Patch) =>
     list.map((c) => (c.id === p.id ? { ...c, ...p.tracking } : c)),
   );
   const [, startTransition] = useTransition();
+
+  /**
+   * Changer de vue passe par le routeur : la page se rend à nouveau, donc l'adresse, la vue
+   * et tous les liens qui la gardent (filtres, recherche, relances) restent d'accord.
+   */
+  function chooseView(value: unknown) {
+    const next = parseView(typeof value === "string" ? value : null);
+    const params = new URLSearchParams(window.location.search);
+    if (next === "etapes") params.set("vue", "etapes");
+    else params.delete("vue");
+    const s = params.toString();
+    startTransition(() => {
+      showTab(next);
+      router.replace(`${window.location.pathname}${s ? `?${s}` : ""}`, { scroll: false });
+    });
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   // Par contact : changements encore en cours, et numéro du dernier geste.
   // « Annuler » n'est proposé que pour le dernier geste, fait quand rien d'autre n'était en cours.
@@ -120,9 +122,9 @@ export function ContactsView({
       </div>
 
       <TabsContent value="liste">
-        <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {optimistic.map((c) => (
-            <li key={c.id} aria-label={c.name}>
+            <li key={c.id} aria-label={c.name} className="min-w-0">
               {card(c)}
             </li>
           ))}

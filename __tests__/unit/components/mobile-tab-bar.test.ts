@@ -56,6 +56,16 @@ describe("MobileTabBar : la barre d'onglets du téléphone (lot 11)", () => {
     expect(current()).toEqual(["Étapes"]);
   });
 
+  it("rechargée sur #mes-contacts : « Contacts » (ou « Étapes ») est en cours, pas « Aujourd'hui » (revue de la PR #25)", async () => {
+    window.history.replaceState(null, "", "/#mes-contacts");
+    search = "vue=etapes";
+    await act(async () => {
+      render(createElement(MobileTabBar));
+    });
+    expect(current()).toEqual(["Étapes"]);
+    window.history.replaceState(null, "", "/");
+  });
+
   it("toucher « Contacts » le met en cours", async () => {
     render(createElement(MobileTabBar));
     await act(async () => {

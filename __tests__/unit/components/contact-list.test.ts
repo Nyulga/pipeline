@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/actions", () => ({ setCalledAction: vi.fn(), setResponseAction: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 import { ContactListContent } from "@/components/contacts/contact-list";
 import { makeContact } from "./helpers/contact";

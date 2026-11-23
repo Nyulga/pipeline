@@ -62,7 +62,7 @@ export function ContactCard({
   return (
     <Card className="h-full" size={compact ? "sm" : "default"}>
       <CardHeader>
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             aria-hidden
             className="grid size-10 shrink-0 place-items-center rounded-full bg-accent font-heading text-sm font-semibold text-accent-foreground"
@@ -71,8 +71,8 @@ export function ContactCard({
           </div>
           <div className="min-w-0">
             <CardTitle className="truncate font-heading text-lg">
-              <PanelLink href={href ?? contactPanelHref({}, c.id)} className="max-w-full truncate align-top hover:underline">
-                {c.name}
+              <PanelLink href={href ?? contactPanelHref({}, c.id)} className="max-w-full hover:underline">
+                <span className="truncate">{c.name}</span>
               </PanelLink>
             </CardTitle>
             <CardDescription className="truncate">{c.company ?? "Sans entreprise"}</CardDescription>
@@ -93,8 +93,8 @@ export function ContactCard({
             {c.email && (
               <li className="flex min-w-0 items-center gap-1.5">
                 <MailIcon aria-hidden className="size-3 shrink-0" />
-                <a href={mailtoHref(c.email)} className={cn(TOUCH_TARGET, "min-w-0 truncate hover:text-foreground")}>
-                  {c.email}
+                <a href={mailtoHref(c.email)} className={cn(TOUCH_TARGET, "min-w-0 hover:text-foreground")}>
+                  <span className="truncate">{c.email}</span>
                 </a>
               </li>
             )}

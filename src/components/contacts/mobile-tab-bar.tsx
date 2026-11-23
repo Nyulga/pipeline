@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ColumnsIcon, SunIcon, UsersIcon, type LucideIcon } from "lucide-react";
@@ -10,18 +10,29 @@ import { buttonVariants } from "@/components/ui/button";
 
 type Tab = "aujourdhui" | "contacts" | "etapes";
 
+// L'ancre de l'adresse (#mes-contacts…), lue dans le navigateur ; vide au rendu serveur.
+const subscribeHash = (onChange: () => void) => {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+};
+const readHash = () => window.location.hash;
+const noHash = () => "";
+
 /**
  * Barre d'onglets du téléphone (lot 11), fixée en bas, masquée à partir de `md`.
  * Les onglets mènent aux sections de l'accueil ; recherche et filtre sont gardés.
- * L'onglet en cours suit le dernier touché, et la vue « Par étape » de l'adresse (pas le défilement).
+ * L'onglet en cours suit le dernier touché (sinon l'ancre de l'adresse), et la vue « Par étape »
+ * de l'adresse ; pas le défilement.
  */
 export function MobileTabBar() {
   const params = useSearchParams();
   const q = params.get("q");
   const etape = params.get("etape");
   const vue = parseView(params.get("vue"));
-  // Section choisie dans la barre ; « Aujourd'hui » à l'arrivée sur la page.
-  const [section, setSection] = useState<"aujourdhui" | "contacts">("aujourdhui");
+  // Section touchée dans la barre ; avant cela, celle de l'ancre (rechargement sur #mes-contacts).
+  const hash = useSyncExternalStore(subscribeHash, readHash, noHash);
+  const [touched, setSection] = useState<"aujourdhui" | "contacts" | null>(null);
+  const section = touched ?? (hash === "#mes-contacts" ? "contacts" : "aujourdhui");
   const current: Tab = section === "aujourdhui" ? "aujourdhui" : vue === "etapes" ? "etapes" : "contacts";
 
   const tabs: { id: Tab; label: string; href: string; icon: LucideIcon }[] = [
