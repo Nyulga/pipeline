@@ -22,3 +22,18 @@ export function contactPanelHref(params: HomeParams, id: string): string {
 export function withoutContact(params: HomeParams): string {
   return homeHref({ ...params, contact: null });
 }
+
+/** Lien `tel:` : chiffres et « + » seulement, quoi qu'on ait saisi (espaces, points, parenthèses…). */
+export function telHref(phone: string): string {
+  return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
+
+/**
+ * Lien `mailto:` : l'adresse est encodée, pour qu'un « ? » ou un « & » saisi n'ajoute
+ * ni destinataire caché ni corps au brouillon.
+ */
+export function mailtoHref(email: string): string {
+  const at = email.indexOf("@");
+  if (at < 0) return `mailto:${encodeURIComponent(email)}`;
+  return `mailto:${encodeURIComponent(email.slice(0, at))}@${encodeURIComponent(email.slice(at + 1))}`;
+}

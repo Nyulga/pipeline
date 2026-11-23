@@ -1,6 +1,6 @@
 # Plan · Lot 9 · Fiche dans un panneau
 
-Issue #17. Pas de changement de base ni de service : la fiche lit ce qu'elle lit déjà (`getContact`, `listNotes`).
+Issue #17. Pas de changement de base. Un petit service, `getContactSheet`, rassemble le contact et ses notes ; il sert à la page et au panneau.
 
 ## Choix
 - **L'adresse porte le panneau** : `/?contact=<id>`, avec la recherche `q` et le filtre `etape` déjà présents. Un rechargement ou un lien partagé rouvre donc le même panneau.
@@ -10,7 +10,7 @@ Issue #17. Pas de changement de base ni de service : la fiche lit ce qu'elle lit
   - À partir de `md`, il s'ouvre à droite, sur 28 rem de large.
   - Le dialog gère Échap, le focus piégé, le retour du focus et le fond assombri.
 - **Ouvrir** : le nom sur la carte devient un lien vers `?contact=<id>`, qui garde `q` et `etape`. Il est suivi sans défilement (`scroll: false`), donc la liste ne bouge pas.
-  Un clic avec Ctrl, ou le clic du milieu, ouvre toujours `/contacts/<id>` dans un nouvel onglet, car c'est un vrai lien.
+  Un clic avec Ctrl, ou le clic du milieu, ouvre `/?contact=<id>` dans un nouvel onglet : la liste, avec le panneau ouvert.
 - **Fermer** : Échap, le bouton « Fermer » ou un clic sur le fond. L'adresse revient alors sans `contact`, sans défilement.
 - **Contenu** : exactement celui de la fiche actuelle. La partie visible est extraite dans un composant partagé `ContactDetails`, utilisé à la fois par `/contacts/<id>` (qui reste) et par le panneau. On y trouve :
   - les coordonnées ;
@@ -35,3 +35,19 @@ Issue #17. Pas de changement de base ni de service : la fiche lit ce qu'elle lit
 | Échap ou « Fermer » referme le panneau ; la liste reste en place | `contact-panel.test.ts` : Échap et « Fermer » remplacent l'adresse par `withoutContact(...)`, avec `scroll: false` ; `contact-links.test.ts` | présentation |
 | `/?contact=<id>` rouvre le panneau au rechargement ; `/contacts/<id>` marche toujours | `contact-links.test.ts` ; intégration : rendu de `ContactDetailsLoader` sur une vraie base, et contact inconnu → message | présentation + service + données |
 | Ajouter une note ou changer la relance depuis le panneau met la liste à jour | les actions rafraîchissent déjà la page (`actions.test.ts`, lots 3 et 4) ; `contact-panel.test.ts` : le formulaire de note et celui de relance sont bien dans le panneau | présentation |
+
+## Après la revue de la PR #23
+- **Fermer sans attendre** : le panneau disparaît tout de suite (état local), puis l'adresse suit.
+- **Historique** : un panneau ouvert par un clic dans l'app se ferme avec `router.back()`, donc Retour ne bégaie pas. Ouvert par un lien partagé ou un rechargement, il se ferme avec `router.replace` (`panel-history.ts`, `PanelLink`).
+- **« À relancer aujourd'hui »** ouvre aussi le panneau, en gardant la recherche et le filtre.
+- **Contact inconnu** : le rendu du panneau est extrait dans `ContactPanelView`, qui est testé (message « Ce contact n'existe plus »).
+- **Finitions** :
+  - une clé par contact sur le panneau ;
+  - l'en-tête et « Fermer » restent collés en haut ;
+  - sur ordinateur, le panneau entre par la droite ;
+  - « Notes » passe en `h3` dans le panneau.
+- **Liens** : `telHref` et `mailtoHref` sont partagés. `mailto:` encode l'adresse, pour qu'un `?` ou un `&` saisi n'ajoute pas de destinataire caché (point du contrôle de sécurité).
+- **Assumé** :
+  - pas de squelette pendant le chargement du panneau, sinon un panneau vide clignoterait à chaque chargement de l'accueil ;
+  - le retour du focus après fermeture est laissé au dialog de base-ui, à vérifier dans un navigateur ;
+  - `bg-black/10` du fond de `sheet` est le style d'origine de shadcn, déjà présent dans `dialog`.

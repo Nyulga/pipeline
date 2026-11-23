@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { ContactDetails } from "@/components/contacts/contact-details";
 import { withoutContact } from "@/components/contacts/contact-links";
-import { ContactPanel } from "@/components/contacts/contact-panel";
+import { ContactPanelView } from "@/components/contacts/contact-panel-view";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-list";
 import { ContactSearch } from "@/components/contacts/contact-search";
@@ -23,19 +22,13 @@ async function PanelSlot({ searchParams }: { searchParams: SearchParams }) {
   if (!id) return null;
   await connection();
   const closeHref = withoutContact({ q: first(params.q), etape: first(params.etape) });
-  const sheet = await getContactSheet(id);
-  if (!sheet) {
-    return (
-      <ContactPanel title="Contact introuvable" closeHref={closeHref}>
-        <p className="text-muted-foreground">Ce contact n&apos;existe plus.</p>
-      </ContactPanel>
-    );
-  }
-  return (
-    <ContactPanel title={sheet.contact.name} closeHref={closeHref}>
-      <ContactDetails contact={sheet.contact} notes={sheet.notes} />
-    </ContactPanel>
-  );
+  return <ContactPanelView sheet={await getContactSheet(id)} closeHref={closeHref} />;
+}
+
+/** Recherche et filtre en cours, gardés par les liens qui ouvrent une fiche. */
+async function linkParamsOf(searchParams: SearchParams) {
+  const params = await searchParams;
+  return { q: first(params.q), etape: first(params.etape) };
 }
 
 async function SearchBox({ searchParams }: { searchParams: SearchParams }) {
@@ -61,7 +54,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
       </Suspense>
 
       <Suspense fallback={<DueFollowUpsSkeleton />}>
-        <DueFollowUps />
+        <DueFollowUps linkParams={linkParamsOf(searchParams)} />
       </Suspense>
 
       <section aria-labelledby="mes-contacts" className="space-y-4">

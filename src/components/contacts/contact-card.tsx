@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { BellIcon, ChevronDownIcon, MailIcon, PhoneIcon } from "lucide-react";
 import { cn } from "cn";
-import { contactPanelHref } from "@/components/contacts/contact-links";
+import { contactPanelHref, mailtoHref, telHref } from "@/components/contacts/contact-links";
+import { PanelLink } from "@/components/contacts/panel-link";
 import { formatDay } from "@/components/contacts/texts";
 import { StageBadge, stageStyles } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -70,9 +70,9 @@ export function ContactCard({
           </div>
           <div className="min-w-0">
             <CardTitle className="truncate font-heading text-lg">
-              <Link href={href ?? contactPanelHref({}, c.id)} scroll={false} className="hover:underline">
+              <PanelLink href={href ?? contactPanelHref({}, c.id)} className="hover:underline">
                 {c.name}
-              </Link>
+              </PanelLink>
             </CardTitle>
             <CardDescription className="truncate">{c.company ?? "Sans entreprise"}</CardDescription>
           </div>
@@ -84,7 +84,7 @@ export function ContactCard({
             {c.phone && (
               <li className="flex items-center gap-1.5">
                 <PhoneIcon aria-hidden className="size-3" />
-                <a href={`tel:${c.phone.replace(/\s+/g, "")}`} className="hover:text-foreground">
+                <a href={telHref(c.phone)} className="hover:text-foreground">
                   {c.phone}
                 </a>
               </li>
@@ -92,7 +92,7 @@ export function ContactCard({
             {c.email && (
               <li className="flex min-w-0 items-center gap-1.5">
                 <MailIcon aria-hidden className="size-3 shrink-0" />
-                <a href={`mailto:${c.email}`} className="truncate hover:text-foreground">
+                <a href={mailtoHref(c.email)} className="truncate hover:text-foreground">
                   {c.email}
                 </a>
               </li>
