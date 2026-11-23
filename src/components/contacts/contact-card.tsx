@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { BellIcon, ChevronDownIcon, MailIcon, PhoneIcon } from "lucide-react";
 import { cn } from "cn";
+import { contactPanelHref } from "@/components/contacts/contact-links";
 import { formatDay } from "@/components/contacts/texts";
 import { StageBadge, stageStyles } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -46,11 +47,14 @@ export function ContactCard({
   error,
   compact = false,
   onStageChange,
+  href,
 }: {
   contact: Contact;
   error?: string;
   compact?: boolean;
   onStageChange: (stage: Stage) => void;
+  /** Où mène le nom : le panneau de fiche (`/?contact=<id>`), en gardant recherche et filtre. */
+  href?: string;
 }) {
   const stage = stageOf(c);
 
@@ -66,7 +70,7 @@ export function ContactCard({
           </div>
           <div className="min-w-0">
             <CardTitle className="truncate font-heading text-lg">
-              <Link href={`/contacts/${c.id}`} className="hover:underline">
+              <Link href={href ?? contactPanelHref({}, c.id)} scroll={false} className="hover:underline">
                 {c.name}
               </Link>
             </CardTitle>

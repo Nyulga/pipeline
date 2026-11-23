@@ -56,7 +56,7 @@ export function ContactListContent({
           Aucun contact à l&apos;étape « {stageStyles[stage].label} ».
         </p>
       ) : (
-        <ContactsView contacts={shown} />
+        <ContactsView contacts={shown} query={query} stage={stage} />
       )}
     </section>
   );
