@@ -37,5 +37,7 @@ describe("WeekSummaryView : « Ta semaine » (lot 10)", () => {
     expect(tile("Taux d'acceptation").textContent).toContain("—");
     expect(tile("Relances à venir").textContent).toContain("0");
     expect(screen.getByText("Aucune relance prévue ces 7 prochains jours.")).toBeTruthy();
+    // Comment la remplir (lot 11).
+    expect(screen.getByText("Fixe une relance depuis la fiche d'un contact.")).toBeTruthy();
   });
 });

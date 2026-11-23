@@ -5,6 +5,7 @@ import { cn } from "cn";
 import { contactPanelHref, mailtoHref, telHref } from "@/components/contacts/contact-links";
 import { PanelLink } from "@/components/contacts/panel-link";
 import { formatDay } from "@/components/contacts/texts";
+import { TOUCH_TARGET } from "@/components/touch-target";
 import { StageBadge, stageStyles } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +71,7 @@ export function ContactCard({
           </div>
           <div className="min-w-0">
             <CardTitle className="truncate font-heading text-lg">
-              <PanelLink href={href ?? contactPanelHref({}, c.id)} className="hover:underline">
+              <PanelLink href={href ?? contactPanelHref({}, c.id)} className="max-w-full truncate align-top hover:underline">
                 {c.name}
               </PanelLink>
             </CardTitle>
@@ -84,7 +85,7 @@ export function ContactCard({
             {c.phone && (
               <li className="flex items-center gap-1.5">
                 <PhoneIcon aria-hidden className="size-3" />
-                <a href={telHref(c.phone)} className="hover:text-foreground">
+                <a href={telHref(c.phone)} className={cn(TOUCH_TARGET, "hover:text-foreground")}>
                   {c.phone}
                 </a>
               </li>
@@ -92,7 +93,7 @@ export function ContactCard({
             {c.email && (
               <li className="flex min-w-0 items-center gap-1.5">
                 <MailIcon aria-hidden className="size-3 shrink-0" />
-                <a href={mailtoHref(c.email)} className="truncate hover:text-foreground">
+                <a href={mailtoHref(c.email)} className={cn(TOUCH_TARGET, "min-w-0 truncate hover:text-foreground")}>
                   {c.email}
                 </a>
               </li>

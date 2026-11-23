@@ -57,3 +57,30 @@ describe("AddContactDialog : ajouter un contact", () => {
     expect(screen.queryByText("Impossible d'enregistrer, réessaie.")).toBeNull();
   });
 });
+
+describe("AddContactDialog : bouton flottant du téléphone (lot 11)", () => {
+  it("la variante flottante ouvre le même formulaire", async () => {
+    render(createElement(AddContactDialog, { variant: "floating" }));
+    const button = screen.getByRole("button", { name: "Ajouter un contact" });
+    expect(button.className).toContain("fixed");
+    expect(button.className).toContain("md:hidden");
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(screen.getByRole("dialog", { name: "Nouveau contact" })).toBeTruthy();
+  });
+
+  it("le bouton de l'en-tête est masqué sur téléphone", () => {
+    render(createElement(AddContactDialog, { variant: "header" }));
+    const cls = screen.getByRole("button", { name: "Ajouter un contact" }).className;
+    expect(cls).toContain("hidden");
+    expect(cls).toContain("md:inline-flex");
+  });
+
+  it("par défaut, un bouton ordinaire (liste vide)", () => {
+    render(createElement(AddContactDialog));
+    const cls = screen.getByRole("button", { name: "Ajouter un contact" }).className;
+    expect(cls).not.toContain("fixed");
+    expect(cls).not.toMatch(/(^|\s)hidden/);
+  });
+});

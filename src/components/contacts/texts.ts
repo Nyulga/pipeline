@@ -55,3 +55,6 @@ export function toCallCount(n: number): string {
   if (n === 0) return "Personne à rappeler";
   return `${n} personne${n > 1 ? "s" : ""} à rappeler`;
 }
+
+/** Ce qui remplit une liste de relances vide : il faut choisir un contact (lot 11). */
+export const FOLLOW_UP_HINT = "Fixe une relance depuis la fiche d'un contact.";

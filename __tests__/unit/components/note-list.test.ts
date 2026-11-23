@@ -26,6 +26,8 @@ describe("NoteList : les notes de la fiche (lot 4)", () => {
 
   it("sans note, le dit", () => {
     render(createElement(NoteList, { notes: [] }));
-    expect(screen.getByText("Aucune note pour l'instant.")).toBeTruthy();
+    expect(screen.getByText("Aucune note pour l'instant.", { exact: false })).toBeTruthy();
+    // L'action pour la remplir : le formulaire juste au-dessus (lot 11).
+    expect(screen.getByText(/Écris la première ci-dessus\./)).toBeTruthy();
   });
 });

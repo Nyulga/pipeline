@@ -147,3 +147,20 @@ describe("lisibilité : contraste ≥ 4,5:1", () => {
       expect(contrast(rgb(fg, bg), rgb(bg)), `${fg} sur ${bg}`).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe("« Réduire les animations » (lot 11)", () => {
+  const start = css.indexOf("@media (prefers-reduced-motion: reduce)");
+  const rule = start < 0 ? "" : css.slice(start, css.indexOf("\n}", start));
+
+  it("globals.css a une règle prefers-reduced-motion: reduce", () => {
+    expect(start).toBeGreaterThanOrEqual(0);
+  });
+
+  it("elle coupe transitions, animations et défilement doux sur tous les éléments", () => {
+    expect(rule).toMatch(/\*,\s*\*::before,\s*\*::after/);
+    expect(rule).toMatch(/animation-duration:\s*0\.01ms\s*!important/);
+    expect(rule).toMatch(/animation-iteration-count:\s*1\s*!important/);
+    expect(rule).toMatch(/transition-duration:\s*0\.01ms\s*!important/);
+    expect(rule).toMatch(/scroll-behavior:\s*auto\s*!important/);
+  });
+});

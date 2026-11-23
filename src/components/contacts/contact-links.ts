@@ -1,12 +1,20 @@
 // Adresses du panneau de fiche : il vit dans l'adresse de l'accueil (`/?contact=<id>`),
-// à côté de la recherche (`q`) et du filtre d'étape (`etape`), pour survivre au rechargement.
+// à côté de la recherche (`q`), du filtre d'étape (`etape`) et de la vue (`vue`), pour survivre au rechargement.
 
-export type HomeParams = { q?: string | null; etape?: string | null; contact?: string | null };
+/** Vue de « Mes contacts » : la liste (par défaut) ou les colonnes par étape (`?vue=etapes`, lot 11). */
+export type View = "liste" | "etapes";
 
-function homeHref(params: HomeParams): string {
+export function parseView(value: string | null | undefined): View {
+  return value === "etapes" ? "etapes" : "liste";
+}
+
+export type HomeParams = { q?: string | null; etape?: string | null; vue?: string | null; contact?: string | null };
+
+/** L'adresse de l'accueil avec ces paramètres ; la vue « Liste », par défaut, n'y figure pas. */
+export function homeHref(params: HomeParams): string {
   const search = new URLSearchParams();
-  for (const key of ["q", "etape", "contact"] as const) {
-    const value = params[key];
+  for (const key of ["q", "etape", "vue", "contact"] as const) {
+    const value = key === "vue" ? (parseView(params.vue) === "etapes" ? "etapes" : null) : params[key];
     if (value) search.set(key, value);
   }
   const s = search.toString();

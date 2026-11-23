@@ -3,7 +3,7 @@
 import { useOptimistic, useRef, useState, useTransition } from "react";
 import { setStageAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
-import { contactPanelHref } from "@/components/contacts/contact-links";
+import { contactPanelHref, parseView, type View } from "@/components/contacts/contact-links";
 import { StageBoard } from "@/components/contacts/stage-board";
 import { SAVE_FAILED_MESSAGE, contactCount } from "@/components/contacts/texts";
 import { dismissUndo, showUndo } from "@/components/contacts/undo-toast";
@@ -21,12 +21,35 @@ export function ContactsView({
   contacts,
   query = "",
   stage = null,
+  view = "liste",
 }: {
   contacts: Contact[];
   /** Recherche et filtre en cours : gardés dans le lien qui ouvre la fiche. */
   query?: string;
   stage?: Stage | null;
+  /** Vue lue dans l'adresse (`?vue=etapes`, lot 11). */
+  view?: View;
 }) {
+  // La vue affichée : celle de l'adresse, puis celle choisie ici. Une nouvelle vue venue
+  // du serveur (onglet « Étapes » du téléphone) remplace le choix local.
+  const [tab, setTab] = useState<View>(view);
+  const [viewFromServer, setViewFromServer] = useState<View>(view);
+  if (view !== viewFromServer) {
+    setViewFromServer(view);
+    setTab(view);
+  }
+
+  /** Changer de vue l'écrit dans l'adresse, sans recharger ni faire défiler. */
+  function chooseView(value: unknown) {
+    const next = parseView(typeof value === "string" ? value : null);
+    setTab(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next === "etapes") params.set("vue", "etapes");
+    else params.delete("vue");
+    const s = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${s ? `?${s}` : ""}${window.location.hash}`);
+  }
+
   // Mise à jour optimiste avec les mêmes règles que le service ; le serveur reste la référence.
   const [optimistic, applyOptimistic] = useOptimistic(contacts, (list: Contact[], p: Patch) =>
     list.map((c) => (c.id === p.id ? { ...c, ...p.tracking } : c)),
@@ -80,12 +103,12 @@ export function ContactsView({
       compact={compact}
       error={errors[c.id]}
       onStageChange={(next) => changeStage(c, next)}
-      href={contactPanelHref({ q: query, etape: stage }, c.id)}
+      href={contactPanelHref({ q: query, etape: stage, vue: tab }, c.id)}
     />
   );
 
   return (
-    <Tabs defaultValue="liste" className="gap-4">
+    <Tabs value={tab} onValueChange={chooseView} className="gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {contactCount(optimistic.length)}

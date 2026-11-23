@@ -185,3 +185,37 @@ describe("ContactsView : le suivi en un geste (lot 8)", () => {
     expect(within(column("Refusé")).getByText("Aucun contact")).toBeTruthy();
   });
 });
+
+describe("ContactsView : la vue vit dans l'adresse (lot 11)", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("view « etapes » ouvre directement la vue « Par étape »", () => {
+    render(createElement(ContactsView, { contacts, view: "etapes" }));
+    expect(screen.getByRole("tab", { name: "Par étape" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("region", { name: /^Accepté/ })).toBeTruthy();
+  });
+
+  it("changer de vue l'écrit dans l'adresse, en gardant le reste", async () => {
+    window.history.replaceState(null, "", "/?q=nord&etape=accepte");
+    render(createElement(ContactsView, { contacts }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Par étape" }));
+    });
+    expect(window.location.search).toBe("?q=nord&etape=accepte&vue=etapes");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Liste" }));
+    });
+    expect(window.location.search).toBe("?q=nord&etape=accepte");
+  });
+
+  it("le lien qui ouvre la fiche garde la vue en cours", () => {
+    render(createElement(ContactsView, { contacts, view: "etapes" }));
+    expect(screen.getByRole("link", { name: "Ana" }).getAttribute("href")).toBe("/?vue=etapes&contact=a");
+  });
+
+  it("une nouvelle vue reçue du serveur (onglet « Étapes » du téléphone) est suivie", () => {
+    const { rerender } = render(createElement(ContactsView, { contacts }));
+    rerender(createElement(ContactsView, { contacts, view: "etapes" }));
+    expect(screen.getByRole("tab", { name: "Par étape" }).getAttribute("aria-selected")).toBe("true");
+  });
+});

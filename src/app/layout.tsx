@@ -35,7 +35,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ThemeToggle />
         </div>
         {children}
-        <Toaster position="bottom-center" />
+        {/* Sur téléphone, le message « Annuler » passe au-dessus de la barre d'onglets et de « + Ajouter » (lot 11). */}
+        <Toaster position="bottom-center" mobileOffset={{ bottom: "calc(8.75rem + env(safe-area-inset-bottom))" }} />
       </body>
     </html>
   );

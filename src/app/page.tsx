@@ -1,18 +1,24 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { withoutContact } from "@/components/contacts/contact-links";
+import { parseView, withoutContact } from "@/components/contacts/contact-links";
 import { ContactPanelView } from "@/components/contacts/contact-panel-view";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-list";
 import { ContactSearch } from "@/components/contacts/contact-search";
 import { ExportButton } from "@/components/contacts/export-button";
+import { MobileTabBar } from "@/components/contacts/mobile-tab-bar";
 import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
 import { WeekSummarySection, WeekSummarySkeleton } from "@/components/contacts/week-summary";
 import { Today, TodayGreeting, TodayGreetingSkeleton, TodaySkeleton } from "@/components/contacts/today";
 import { getContactSheet } from "@/services/contact-sheet";
 import { parseStage } from "@/services/tracking";
 
-type SearchParams = Promise<{ q?: string | string[]; etape?: string | string[]; contact?: string | string[] }>;
+type SearchParams = Promise<{
+  q?: string | string[];
+  etape?: string | string[];
+  vue?: string | string[];
+  contact?: string | string[];
+}>;
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -22,31 +28,32 @@ async function PanelSlot({ searchParams }: { searchParams: SearchParams }) {
   const id = first(params.contact);
   if (!id) return null;
   await connection();
-  const closeHref = withoutContact({ q: first(params.q), etape: first(params.etape) });
+  const closeHref = withoutContact({ q: first(params.q), etape: first(params.etape), vue: first(params.vue) });
   return <ContactPanelView sheet={await getContactSheet(id)} closeHref={closeHref} />;
 }
 
-/** Recherche et filtre en cours, gardés par les liens qui ouvrent une fiche. */
+/** Recherche, filtre et vue en cours, gardés par les liens qui ouvrent une fiche. */
 async function linkParamsOf(searchParams: SearchParams) {
   const params = await searchParams;
-  return { q: first(params.q), etape: first(params.etape) };
+  return { q: first(params.q), etape: first(params.etape), vue: first(params.vue) };
 }
 
 async function SearchBox({ searchParams }: { searchParams: SearchParams }) {
-  const { q, etape } = await searchParams;
-  return <ContactSearch query={first(q)?.trim() ?? ""} stage={parseStage(first(etape))} />;
+  const { q, etape, vue } = await searchParams;
+  return <ContactSearch query={first(q)?.trim() ?? ""} stage={parseStage(first(etape))} view={parseView(first(vue))} />;
 }
 
 export default function Home({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-12">
-      <header className="flex flex-wrap items-end justify-between gap-4 pr-12">
+    // Sur téléphone, une marge basse pour que la barre d'onglets et « + Ajouter » ne cachent rien (lot 11).
+    <main className="mx-auto w-full max-w-6xl space-y-8 px-4 pt-12 pb-40 md:pb-12">
+      <header id="aujourdhui" className="flex scroll-mt-4 flex-wrap items-end justify-between gap-4 pr-12">
         <Suspense fallback={<TodayGreetingSkeleton />}>
           <TodayGreeting />
         </Suspense>
         <div className="flex flex-wrap gap-2">
           <ExportButton />
-          <AddContactDialog />
+          <AddContactDialog variant="header" />
         </div>
       </header>
 
@@ -76,6 +83,12 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
 
       <Suspense fallback={null}>
         <PanelSlot searchParams={searchParams} />
+      </Suspense>
+
+      {/* Téléphone seulement : « + Ajouter » flottant et barre d'onglets (lot 11). */}
+      <AddContactDialog variant="floating" />
+      <Suspense fallback={null}>
+        <MobileTabBar />
       </Suspense>
     </main>
   );
