@@ -18,7 +18,7 @@ function show(c: Contact, { error, compact }: { error?: string; compact?: boolea
 /** Ouvre le menu d'étape de la carte. */
 const openStageMenu = () =>
   act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: /^Étape de Claire Martin/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Claire Martin/ }));
   });
 
 const stageBadge = (label: string) => screen.queryByText(label, { selector: "[data-slot=badge]" });
@@ -58,6 +58,15 @@ describe("ContactCard : un seul bouton d'étape (lot 8)", () => {
     expect(onStageChange).toHaveBeenCalledWith("accepte");
   });
 
+  it("le menu se referme une fois l'étape choisie", async () => {
+    show(contact());
+    await openStageMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitemradio", { name: "Refusé" }));
+    });
+    expect(screen.queryAllByRole("menuitemradio")).toHaveLength(0);
+  });
+
   it("plus de « Marquer appelé », d'« Annuler l'appel » ni de sélecteur de réponse, et aucun bouton grisé", () => {
     show(contact({ called: true, response: "accepte" }));
     expect(screen.queryByRole("button", { name: "Marquer appelé" })).toBeNull();
@@ -65,6 +74,14 @@ describe("ContactCard : un seul bouton d'étape (lot 8)", () => {
     expect(screen.queryByRole("group", { name: /^Réponse de/ })).toBeNull();
     expect(screen.queryByText(/Remets d'abord/)).toBeNull();
     for (const b of screen.getAllByRole("button")) expect(isDisabled(b)).toBe(false);
+  });
+});
+
+describe("ContactCard : vue compacte (revue de la PR #22)", () => {
+  it("le texte visible du bouton fait partie de son nom accessible", () => {
+    show(contact({ called: true, response: "accepte" }), { compact: true });
+    const button = screen.getByRole("button", { name: /^Changer d'étape/ });
+    expect(button.getAttribute("aria-label")).toBe("Changer d'étape de Claire Martin (Accepté)");
   });
 });
 

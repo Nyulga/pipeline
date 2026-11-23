@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useRef, useState, useTransition } from "react";
 import { setStageAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
 import { StageBoard } from "@/components/contacts/stage-board";
@@ -23,15 +23,21 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
   );
   const [, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Changements encore en cours, par contact : pendant ce temps, l'étape « d'avant » n'est pas sûre.
+  const inFlight = useRef<Record<string, number>>({});
 
   /** Place le contact à une étape ; `undoable` : proposer « Annuler » une fois enregistré. */
-  function changeStage(c: Contact, stage: Stage, undoable = true) {
+  function changeStage(c: Contact, stage: Stage, allowUndo = true) {
     const before = stageOf(c);
     if (stage === before) return;
+    // Pas d'« Annuler » si un autre changement de ce contact n'est pas encore enregistré : « avant » serait faux.
+    const undoable = allowUndo && !inFlight.current[c.id];
+    inFlight.current[c.id] = (inFlight.current[c.id] ?? 0) + 1;
     startTransition(async () => {
       applyOptimistic({ id: c.id, tracking: trackingForStage(stage) });
       // La mise à jour optimiste s'annule d'elle-même à la fin de la transition si rien n'a changé côté serveur.
       const r = await setStageAction(c.id, stage).catch(() => SAVE_FAILED);
+      inFlight.current[c.id] -= 1;
       setErrors((prev) => {
         const next = { ...prev };
         delete next[c.id];
@@ -40,7 +46,7 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
       });
       if (r.ok && undoable) {
         const now = { ...c, ...trackingForStage(stage) };
-        showUndo(`${c.name} : ${stageStyles[stage].label}`, () => changeStage(now, before, false));
+        showUndo(c.id, `${c.name} : ${stageStyles[stage].label}`, () => changeStage(now, before, false));
       }
     });
   }

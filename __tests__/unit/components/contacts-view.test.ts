@@ -38,7 +38,7 @@ const choose = async (name: string, label: string) => {
 /** Le dernier message « Annuler » affiché, et son bouton. */
 const lastToast = () => {
   const [message, options] = vi.mocked(toast).mock.calls.at(-1)!;
-  return { message, options: options as { action: { label: string; onClick: () => void }; duration: number } };
+  return { message, options: options as { id: string; action: { label: string; onClick: () => void }; duration: number } };
 };
 
 beforeEach(() => {
@@ -81,13 +81,37 @@ describe("ContactsView : le suivi en un geste (lot 8)", () => {
   });
 
   it("« Annuler » remet exactement l'étape d'avant, sans nouveau message", async () => {
-    vi.mocked(setStageAction).mockResolvedValue({ ok: true });
-    render(createElement(ContactsView, { contacts }));
+    const undoServer = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockResolvedValueOnce({ ok: true }).mockReturnValueOnce(undoServer.promise);
+    // Le serveur a enregistré « À appeler » : la liste reçue le dit.
+    const view = render(createElement(ContactsView, { contacts }));
     await choose("Bruno", "À appeler");
+    view.rerender(createElement(ContactsView, { contacts: [contacts[0], { ...contacts[1], called: false, response: "enAttente" }] }));
+    expect(stage("Bruno")).toBe("À appeler");
     await act(async () => lastToast().options.action.onClick());
     expect(setStageAction).toHaveBeenLastCalledWith("b", "accepte");
     expect(stage("Bruno")).toBe("Accepté");
     expect(toast).toHaveBeenCalledTimes(1);
+    await act(async () => undoServer.resolve({ ok: true }));
+  });
+
+  it("un nouveau changement sur le même contact remplace son message « Annuler »", async () => {
+    vi.mocked(setStageAction).mockResolvedValue({ ok: true });
+    render(createElement(ContactsView, { contacts }));
+    await choose("Ana", "Accepté");
+    await choose("Ana", "Refusé");
+    const ids = vi.mocked(toast).mock.calls.map((c) => (c[1] as { id: string }).id);
+    expect(ids).toEqual(["annuler-a", "annuler-a"]);
+  });
+
+  it("pas d'« Annuler » pour un changement fait pendant qu'un autre s'enregistre encore sur le même contact", async () => {
+    const first = pending<{ ok: false; error: string }>();
+    vi.mocked(setStageAction).mockReturnValueOnce(first.promise).mockResolvedValueOnce({ ok: true });
+    render(createElement(ContactsView, { contacts }));
+    await choose("Ana", "Accepté");
+    await choose("Ana", "Refusé");
+    await act(async () => first.resolve({ ok: false, error: "Contact introuvable." }));
+    expect(toast).not.toHaveBeenCalled();
   });
 
   it("choisir l'étape déjà en place ne fait rien", async () => {

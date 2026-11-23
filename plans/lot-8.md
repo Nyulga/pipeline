@@ -37,3 +37,11 @@ Issue #16. Pas de changement de base : l'étape s'écrit avec l'appel et la rép
 | Un seul bouton d'étape remplace les 4 boutons ; choisir une étape enregistre l'appel et la réponse | `tracking.test.ts` (`trackingForStage` pour chaque étape, aller-retour avec `stageOf`) ; `contact-card.test.ts` (le menu, les 4 étapes, plus de bouton « Marquer appelé » ni de sélecteur) ; `contacts-view.test.ts` (`setStageAction(id, étape)`, étape affichée tout de suite) ; intégration `tracking.test.ts` (`setStage` sur une vraie base, étape inconnue refusée) ; `actions.test.ts` | service, présentation, données |
 | Message « … · Annuler » ; « Annuler » remet exactement le suivi d'avant | `contacts-view.test.ts` et `call-focus.test.ts` : le message apparaît, « Annuler » appelle `setStageAction(id, étape d'avant)` (ou `setFollowUpAction(id, relance d'avant)`) ; intégration : aller-retour Accepté → À appeler → Annuler, qui redonne Accepté | présentation, service + données |
 | Repasser en « À appeler » remet en attente ; plus de bouton grisé | `tracking.test.ts` ; `contact-card.test.ts` (aucun bouton désactivé, même pour un contact accepté) | service, présentation |
+
+## Après la revue de la PR #22
+- **Carte « À appeler maintenant »** : « Annuler » remet aussi la carte comme avant. Avec Appeler, puis Refusé (ou Accepté, ou Plus tard), puis Annuler, la personne revient sur la carte, appelée.
+- **Un seul message « Annuler » par contact** (`id` sonner `annuler-<id>`) : un nouveau geste remplace le message précédent, dont l'« Annuler » serait périmé.
+- **Pas d'« Annuler »** pour un geste fait pendant qu'un autre geste sur le même contact s'enregistre encore : l'étape « d'avant » ne serait pas sûre.
+- **Le menu d'étape se referme** après le choix (`closeOnClick` : par défaut, base-ui le laisse ouvert).
+- **Vue compacte** : le nom accessible du bouton contient son texte visible, « Changer d'étape de X (Accepté) » (WCAG 2.5.3).
+- **Assumé** : le message « Annuler » survit à un changement de page, puisque le `<Toaster>` est dans le layout. L'écriture se fait et la page se rafraîchit ; seul un éventuel échec ne serait affiché nulle part.

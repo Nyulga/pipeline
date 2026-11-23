@@ -95,18 +95,21 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
   }
 
   /** Change l'étape ; une fois enregistrée, « Annuler » remet l'étape d'avant (la personne revient dans la file). */
+  /** L'« Annuler » d'un geste : remet aussi la carte comme elle était (personne épinglée ou non). */
+  function undoFor(c: Contact) {
+    const wasPinned = state.pinned === c.id;
+    // Un autre geste sur cette personne n'est pas encore enregistré : l'état « d'avant » n'est pas sûr.
+    const busy = state.entries.some((e) => e.id === c.id && !e.settled);
+    return (message: string, patch: Patch, undo: () => Promise<TrackingActionState>) =>
+      busy ? undefined : () => showUndo(c.id, message, () => save(c, patch, wasPinned, undo));
+  }
+
   function moveTo(c: Contact, stage: Stage, pin: boolean) {
     const before = stageOf(c);
-    save(
-      c,
-      trackingForStage(stage),
-      pin,
-      () => setStageAction(c.id, stage),
-      () =>
-        showUndo(`${c.name} : ${stageStyles[stage].label}`, () =>
-          save(c, trackingForStage(before), false, () => setStageAction(c.id, before)),
-        ),
+    const undo = undoFor(c)(`${c.name} : ${stageStyles[stage].label}`, trackingForStage(before), () =>
+      setStageAction(c.id, before),
     );
+    save(c, trackingForStage(stage), pin, () => setStageAction(c.id, stage), undo);
   }
 
   const call = (c: Contact) => moveTo(c, "appeleEnAttente", true);
@@ -114,16 +117,10 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
   const later = (c: Contact) => {
     const day = nextDay(today);
     const before = c.nextFollowUp;
-    save(
-      c,
-      { nextFollowUp: day },
-      false,
-      () => setFollowUpAction(c.id, day),
-      () =>
-        showUndo(`${c.name} : relance demain`, () =>
-          save(c, { nextFollowUp: before }, false, () => setFollowUpAction(c.id, before ?? "")),
-        ),
+    const undo = undoFor(c)(`${c.name} : relance demain`, { nextFollowUp: before }, () =>
+      setFollowUpAction(c.id, before ?? ""),
     );
+    save(c, { nextFollowUp: day }, false, () => setFollowUpAction(c.id, day), undo);
   };
 
   return (

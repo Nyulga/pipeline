@@ -118,7 +118,11 @@ export function ContactCard({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label={`Étape de ${c.name} : ${stageStyles[stage].label}`}
+                aria-label={
+                  compact
+                    ? `Changer d'étape de ${c.name} (${stageStyles[stage].label})`
+                    : `Étape de ${c.name} : ${stageStyles[stage].label}`
+                }
                 className={cn("-ml-1 gap-1 px-1", compact && "text-muted-foreground")}
               />
             }
@@ -135,7 +139,7 @@ export function ContactCard({
               }}
             >
               {STAGES.map((s) => (
-                <DropdownMenuRadioItem key={s} value={s}>
+                <DropdownMenuRadioItem key={s} value={s} closeOnClick>
                   <span aria-hidden className={cn("size-2 rounded-full", stageStyles[s].dot)} />
                   {stageStyles[s].label}
                 </DropdownMenuRadioItem>

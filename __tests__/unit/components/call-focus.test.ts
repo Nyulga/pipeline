@@ -156,7 +156,7 @@ describe("CallFocus : quand le serveur renvoie la liste (revue de la PR #21)", (
 
 const lastToast = () => {
   const [message, options] = vi.mocked(toast).mock.calls.at(-1)!;
-  return { message, options: options as { action: { label: string; onClick: () => void }; duration: number } };
+  return { message, options: options as { id: string; action: { label: string; onClick: () => void }; duration: number } };
 };
 
 describe("CallFocus : « Annuler » après chaque geste (lot 8)", () => {
@@ -195,5 +195,39 @@ describe("CallFocus : « Annuler » après chaque geste (lot 8)", () => {
     render(createElement(CallFocus, { contacts: [late], today: TODAY }));
     await press("Plus tard");
     expect(toast).not.toHaveBeenCalled();
+  });
+});
+
+describe("CallFocus : « Annuler » après « Appeler » puis l'issue (revue de la PR #22)", () => {
+  it.each([["Refusé"], ["Accepté"], ["Plus tard"]])(
+    "Appeler, puis %s, puis Annuler : la personne revient sur la carte, appelée",
+    async (label) => {
+      render(createElement(CallFocus, { contacts: [fresh, nophone], today: TODAY }));
+      await pressLink("Appeler");
+      await press(label);
+      expect(current()).toBe("Inès Petit");
+      await act(async () => lastToast().options.action.onClick());
+      expect(current()).toBe("Thomas Bernard");
+      expect(within(focus()).getByText("Appelé · en attente", { selector: "[data-slot=badge]" })).toBeTruthy();
+    },
+  );
+
+  it("un nouveau geste sur la même personne remplace son message « Annuler »", async () => {
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    const first = lastToast().options.id;
+    await press("Accepté");
+    expect(lastToast().options.id).toBe(first);
+    expect(first).toBe("annuler-fresh");
+  });
+
+  it("pas d'« Annuler » pour un geste fait pendant qu'un autre s'enregistre encore sur la même personne", async () => {
+    const forCall = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockReturnValueOnce(forCall.promise).mockResolvedValueOnce({ ok: true });
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    await press("Accepté");
+    await act(async () => forCall.resolve({ ok: true }));
+    expect(vi.mocked(toast).mock.calls.map((c) => c[0])).toEqual(["Thomas Bernard : Appelé · en attente"]);
   });
 });
