@@ -1,8 +1,7 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { ArrowLeftIcon } from "lucide-react";
+import { BackToContacts } from "@/components/contacts/back-to-contacts";
 import { ContactDetails } from "@/components/contacts/contact-details";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContactSheet } from "@/services/contact-sheet";
@@ -11,13 +10,7 @@ import { getContactSheet } from "@/services/contact-sheet";
 export default function ContactPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-12">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeftIcon aria-hidden className="size-4" />
-        Mes contacts
-      </Link>
+      <BackToContacts />
       <Suspense fallback={<div aria-busy className="h-64 animate-pulse rounded-lg border border-border bg-muted" />}>
         <ContactSheet params={params} />
       </Suspense>

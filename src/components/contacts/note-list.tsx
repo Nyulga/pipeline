@@ -3,7 +3,9 @@ import type { Note } from "@/services/notes";
 
 /** Les notes d'un contact, dans l'ordre reçu (le service les donne des plus récentes aux plus anciennes). */
 export function NoteList({ notes }: { notes: Note[] }) {
-  if (notes.length === 0) return <p className="text-sm text-muted-foreground">Aucune note pour l&apos;instant.</p>;
+  // Le formulaire de note est juste au-dessus : c'est l'action qui remplit la liste (lot 11).
+  if (notes.length === 0)
+    return <p className="text-sm text-muted-foreground">Aucune note pour l&apos;instant. Écris la première ci-dessus.</p>;
   return (
     <ol className="space-y-3">
       {notes.map((n) => (

@@ -16,7 +16,7 @@ export function StageBoard({
   const groups = groupByStage(contacts);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {STAGES.map((stage) => {
         const items = groups[stage];
         const style = stageStyles[stage];
@@ -25,7 +25,7 @@ export function StageBoard({
             key={stage}
             data-stage={stage}
             aria-labelledby={`etape-${stage}`}
-            className="flex flex-col gap-3 rounded-lg border border-border bg-muted/40 p-3"
+            className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-muted/40 p-3"
           >
             <h2 id={`etape-${stage}`} className="flex items-center gap-2 font-sans text-sm font-semibold">
               <span aria-hidden className={cn("size-2 rounded-full", style.dot)} />
@@ -42,7 +42,7 @@ export function StageBoard({
             ) : (
               <ul className="flex flex-col gap-3">
                 {items.map((c) => (
-                  <li key={c.id} aria-label={c.name}>
+                  <li key={c.id} aria-label={c.name} className="min-w-0">
                     {renderContact(c)}
                   </li>
                 ))}

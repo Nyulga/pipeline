@@ -1,28 +1,23 @@
 import Link from "next/link";
 import { cn } from "cn";
+import { homeHref, type View } from "@/components/contacts/contact-links";
 import { stageStyles } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import type { Contact } from "@/services/contact-model";
 import { STAGES, groupByStage, type Stage } from "@/services/tracking";
-
-/** L'adresse d'un filtre : la recherche en cours, plus l'étape (rien pour « Tous »). */
-function filterHref(query: string, stage: Stage | null): string {
-  const params = new URLSearchParams();
-  if (query) params.set("q", query);
-  if (stage) params.set("etape", stage);
-  const s = params.toString();
-  return s ? `/?${s}` : "/";
-}
 
 /** Les pastilles « Tous · À appeler · … », chacune avec son nombre ; le filtre vit dans l'adresse. */
 export function StageFilter({
   contacts,
   active,
   query,
+  view = "liste",
 }: {
   contacts: readonly Contact[];
   active: Stage | null;
   query: string;
+  /** Vue en cours : gardée par chaque pastille. */
+  view?: View;
 }) {
   const groups = groupByStage(contacts);
   const pills: { stage: Stage | null; label: string; count: number; dot?: string }[] = [
@@ -37,7 +32,7 @@ export function StageFilter({
         return (
           <Link
             key={p.stage ?? "tous"}
-            href={filterHref(query, p.stage)}
+            href={homeHref({ q: query, etape: p.stage, vue: view })}
             aria-current={isActive ? "page" : undefined}
             className={cn(
               buttonVariants({ variant: isActive ? "default" : "outline", size: "sm" }),

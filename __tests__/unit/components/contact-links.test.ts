@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contactPanelHref, mailtoHref, telHref, withoutContact } from "@/components/contacts/contact-links";
+import { contactPanelHref, homeHref, mailtoHref, parseView, telHref, withoutContact } from "@/components/contacts/contact-links";
 
 describe("adresses du panneau de fiche (lot 9)", () => {
   it("ouvrir : ?contact=<id>, en gardant la recherche et le filtre", () => {
@@ -34,5 +34,25 @@ describe("liens tel: et mailto: depuis les champs saisis (revue de la PR #23)", 
   it("mailto: encode l'adresse : un « ? » ou un « & » n'ajoute ni destinataire ni corps", () => {
     expect(mailtoHref("claire@ateliernord.fr")).toBe("mailto:claire@ateliernord.fr");
     expect(mailtoHref("a@b.fr?bcc=x@y.z&body=hi")).toBe("mailto:a@b.fr%3Fbcc%3Dx%40y.z%26body%3Dhi");
+  });
+});
+
+describe("la vue Liste / Par étape vit dans l'adresse (lot 11)", () => {
+  it("parseView : « etapes » ou la liste par défaut", () => {
+    expect(parseView("etapes")).toBe("etapes");
+    expect(parseView("liste")).toBe("liste");
+    expect(parseView(undefined)).toBe("liste");
+    expect(parseView("autre")).toBe("liste");
+  });
+
+  it("homeHref garde la vue « Par étape » ; la liste est la vue par défaut, sans paramètre", () => {
+    expect(homeHref({ q: "nord", etape: "accepte", vue: "etapes" })).toBe("/?q=nord&etape=accepte&vue=etapes");
+    expect(homeHref({ q: "nord", vue: "liste" })).toBe("/?q=nord");
+    expect(homeHref({})).toBe("/");
+  });
+
+  it("ouvrir et fermer le panneau gardent la vue", () => {
+    expect(contactPanelHref({ vue: "etapes" }, "abc")).toBe("/?vue=etapes&contact=abc");
+    expect(withoutContact({ vue: "etapes", contact: "abc" })).toBe("/?vue=etapes");
   });
 });

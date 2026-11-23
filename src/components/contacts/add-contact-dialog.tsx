@@ -26,7 +26,17 @@ const INITIAL: DialogState = { ok: false, errors: {} };
 /** Échec inattendu (réseau, base injoignable…) : la fenêtre reste ouverte, la saisie est gardée. */
 const SAVE_FAILED: DialogState = { ok: false, errors: {}, formError: SAVE_FAILED_MESSAGE };
 
-export function AddContactDialog() {
+/** Où est le bouton : ordinaire (liste vide), dans l'en-tête (masqué sur téléphone), ou flottant (téléphone, lot 11). */
+type Variant = "default" | "header" | "floating";
+
+const TRIGGER_CLASS: Record<Variant, string> = {
+  default: "",
+  header: "hidden md:inline-flex",
+  // Au-dessus de la barre d'onglets, à droite.
+  floating: "fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 h-12 rounded-full px-5 shadow-lg md:hidden",
+};
+
+export function AddContactDialog({ variant = "default" }: { variant?: Variant }) {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState(EMPTY);
 
@@ -44,7 +54,7 @@ export function AddContactDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button />}>
+      <DialogTrigger render={<Button size={variant === "floating" ? "lg" : "default"} className={TRIGGER_CLASS[variant]} />}>
         <PlusIcon data-icon="inline-start" />
         Ajouter un contact
       </DialogTrigger>

@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/actions", () => ({ setCalledAction: vi.fn(), setResponseAction: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 import { ContactListContent } from "@/components/contacts/contact-list";
 import { makeContact } from "./helpers/contact";
@@ -49,5 +50,29 @@ describe("ContactListContent : filtre par étape (lot 7)", () => {
   it("sans étape, tous les contacts", () => {
     render(createElement(ContactListContent, { contacts, query: "" }));
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+});
+
+describe("ContactListContent : chaque liste vide propose l'action pour la remplir (lot 11)", () => {
+  it("liste vide : un bouton « Ajouter un contact »", () => {
+    render(createElement(ContactListContent, { contacts: [], query: "" }));
+    expect(screen.getByRole("button", { name: "Ajouter un contact" })).toBeTruthy();
+  });
+
+  it("recherche sans résultat : « Effacer la recherche », qui garde le filtre et la vue", () => {
+    render(createElement(ContactListContent, { contacts: [], query: "martin", stage: "accepte", view: "etapes" }));
+    expect(screen.getByRole("link", { name: "Effacer la recherche" }).getAttribute("href")).toBe("/?etape=accepte&vue=etapes");
+  });
+
+  it("étape vide : « Voir tous les contacts », qui garde la recherche et la vue", () => {
+    const contacts = [makeContact({ name: "Ana" })];
+    render(createElement(ContactListContent, { contacts, query: "an", stage: "refuse", view: "etapes" }));
+    expect(screen.getByRole("link", { name: "Voir tous les contacts" }).getAttribute("href")).toBe("/?q=an&vue=etapes");
+  });
+
+  it("les pastilles d'étape gardent la vue", () => {
+    const contacts = [makeContact({ name: "Ana" })];
+    render(createElement(ContactListContent, { contacts, query: "", view: "etapes" }));
+    expect(screen.getByRole("link", { name: /^Accepté/ }).getAttribute("href")).toBe("/?etape=accepte&vue=etapes");
   });
 });

@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { contactPanelHref, type HomeParams } from "@/components/contacts/contact-links";
 import { PanelLink } from "@/components/contacts/panel-link";
-import { formatDay } from "@/components/contacts/texts";
+import { FOLLOW_UP_HINT, formatDay } from "@/components/contacts/texts";
 import { FollowUpBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listDueFollowUps, type DueFollowUp } from "@/services/contacts";
@@ -20,7 +20,10 @@ export function DueFollowUpList({ items, linkParams = {} }: { items: DueFollowUp
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Personne à relancer aujourd&apos;hui.</p>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p>Personne à relancer aujourd&apos;hui.</p>
+              <p>{FOLLOW_UP_HINT}</p>
+            </div>
           ) : (
             <ul className="divide-y divide-border">
               {items.map(({ contact: c, state }) => (

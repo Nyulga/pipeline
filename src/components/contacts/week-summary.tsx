@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { contactPanelHref, type HomeParams } from "@/components/contacts/contact-links";
 import { PanelLink } from "@/components/contacts/panel-link";
-import { formatDay } from "@/components/contacts/texts";
+import { FOLLOW_UP_HINT, formatDay } from "@/components/contacts/texts";
 import { Card, CardContent } from "@/components/ui/card";
 import { getWeekSummary, type WeekSummary } from "@/services/week";
 
@@ -30,7 +30,10 @@ export function WeekSummaryView({ summary, linkParams = {} }: { summary: WeekSum
         <Figure label="Relances à venir" value={String(upcoming.length)} />
       </div>
       {upcoming.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucune relance prévue ces 7 prochains jours.</p>
+        <div className="space-y-1 text-sm text-muted-foreground">
+          <p>Aucune relance prévue ces 7 prochains jours.</p>
+          <p>{FOLLOW_UP_HINT}</p>
+        </div>
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border">
           {upcoming.map((c) => (

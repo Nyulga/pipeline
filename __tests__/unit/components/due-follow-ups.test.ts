@@ -34,6 +34,8 @@ describe("DueFollowUpList : « À relancer aujourd'hui » (lot 3)", () => {
     render(createElement(DueFollowUpList, { items: [] }));
     const section = screen.getByRole("region", { name: "À relancer aujourd'hui" });
     expect(within(section).getByText("Personne à relancer aujourd'hui.")).toBeTruthy();
+    // Comment la remplir (lot 11).
+    expect(within(section).getByText("Fixe une relance depuis la fiche d'un contact.")).toBeTruthy();
   });
 });
 
