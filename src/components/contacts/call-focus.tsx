@@ -104,7 +104,8 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
     const wasPinned = state.pinned === c.id;
     // Un autre geste sur cette personne n'est pas encore enregistré : l'état « d'avant » n'est pas sûr.
     const busy = state.entries.some((e) => e.id === c.id && !e.settled);
-    if (busy) dismissUndo(c.id);
+    // Le message « Annuler » en place est périmé dès ce geste.
+    dismissUndo(c.id);
     return (message: string, patch: Patch, undo: () => Promise<TrackingActionState>) =>
       busy ? undefined : () => showUndo(c.id, message, () => save(c, patch, wasPinned, undo));
   }

@@ -35,7 +35,8 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
     if (stage === before) return;
     // Pas d'« Annuler » si un autre changement de ce contact n'est pas encore enregistré : « avant » serait faux.
     const undoable = allowUndo && !inFlight.current[c.id];
-    if (!undoable) dismissUndo(c.id);
+    // Le message « Annuler » en place est périmé dès ce geste.
+    dismissUndo(c.id);
     const gesture = ++gestures.current;
     lastGesture.current[c.id] = gesture;
     inFlight.current[c.id] = (inFlight.current[c.id] ?? 0) + 1;

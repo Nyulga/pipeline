@@ -212,6 +212,17 @@ describe("CallFocus : « Annuler » après « Appeler » puis l'issue (revue de 
     },
   );
 
+  it("un nouveau geste retire tout de suite le message « Annuler » en place", async () => {
+    vi.mocked(toast.dismiss).mockClear();
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    const answer = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockReturnValueOnce(answer.promise);
+    await press("Accepté");
+    expect(toast.dismiss).toHaveBeenCalledWith("annuler-fresh");
+    await act(async () => answer.resolve({ ok: true }));
+  });
+
   it("un nouveau geste sur la même personne remplace son message « Annuler »", async () => {
     render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
     await pressLink("Appeler");

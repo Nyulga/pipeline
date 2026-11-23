@@ -104,6 +104,17 @@ describe("ContactsView : le suivi en un geste (lot 8)", () => {
     expect(ids).toEqual(["annuler-a", "annuler-a"]);
   });
 
+  it("un nouveau changement retire tout de suite le message « Annuler » en place", async () => {
+    const second = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockResolvedValueOnce({ ok: true }).mockReturnValueOnce(second.promise);
+    vi.mocked(toast.dismiss).mockClear();
+    render(createElement(ContactsView, { contacts }));
+    await choose("Ana", "Accepté");
+    await choose("Ana", "Refusé");
+    expect(toast.dismiss).toHaveBeenCalledWith("annuler-a");
+    await act(async () => second.resolve({ ok: true }));
+  });
+
   it("le premier changement, enregistré après un second, n'affiche pas son « Annuler » périmé", async () => {
     const first = pending<{ ok: true }>();
     vi.mocked(setStageAction).mockReturnValueOnce(first.promise).mockResolvedValueOnce({ ok: true });
