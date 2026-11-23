@@ -68,6 +68,8 @@ const MIGRATIONS: string[][] = [
     )`,
     `CREATE INDEX IF NOT EXISTS notes_contact_created ON notes (contact_id, created_at)`,
   ],
+  // 5 · date de l'appel (lot 10) : un instant ISO (UTC), ou NULL. Les appels d'avant n'en ont pas.
+  [`ALTER TABLE contacts ADD COLUMN called_at TEXT`],
 ];
 
 /** Version du schéma une fois toutes les migrations passées. */

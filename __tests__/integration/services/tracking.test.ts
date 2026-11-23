@@ -73,7 +73,10 @@ describe("setStage : l'étape en une écriture (lot 8)", () => {
     const before = await find(c.id);
     await setStage(c.id, "aAppeler");
     await setStage(c.id, "refuse");
-    expect(await find(c.id)).toEqual(before);
+    // Le suivi d'avant revient à l'identique ; la date d'appel est celle de l'annulation (limite assumée du lot 10).
+    const after = await find(c.id);
+    expect({ ...after, calledAt: null }).toEqual({ ...before, calledAt: null });
+    expect(after.calledAt).not.toBeNull();
   });
 
   it("une étape inconnue ou un contact introuvable n'écrivent rien", async () => {

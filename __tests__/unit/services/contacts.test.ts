@@ -45,6 +45,7 @@ const record = (over: Partial<ContactRecord> = {}): ContactRecord => ({
   phone: "06 12 34 56 78",
   email: "claire@ateliernord.fr",
   called: 0,
+  called_at: null,
   response: "enAttente",
   next_follow_up: null,
   created_at: "2026-11-19T10:00:00.000Z",
@@ -135,6 +136,7 @@ describe("addContact", () => {
         phone: "06 12 34 56 78",
         email: "claire@ateliernord.fr",
         called: false,
+        calledAt: null,
         response: "enAttente",
         nextFollowUp: null,
         createdAt: "2026-11-19T10:00:00.000Z",
@@ -182,14 +184,14 @@ describe("setCalled", () => {
   it("marque appelé en gardant la réponse", async () => {
     stored(record({ called: 0, response: "enAttente" }), record({ called: 1 }));
     const r = await setCalled("id-1", true);
-    expect(written).toEqual({ called: true, response: "enAttente" });
+    expect(written).toEqual({ called: true, calledAt: expect.any(String), response: "enAttente" });
     expect(r.ok && r.contact.called).toBe(true);
   });
 
   it("repasser en « non appelé » remet la réponse à « en attente »", async () => {
     stored(record({ called: 1, response: "accepte" }), record());
     await setCalled("id-1", false);
-    expect(written).toEqual({ called: false, response: "enAttente" });
+    expect(written).toEqual({ called: false, calledAt: null, response: "enAttente" });
   });
 
   it("signale un contact introuvable sans rien écrire", async () => {
@@ -208,7 +210,7 @@ describe("setResponse", () => {
   it("une réponse « accepté » marque aussi le contact comme appelé", async () => {
     stored(record({ called: 0, response: "enAttente" }), record({ called: 1, response: "accepte" }));
     const r = await setResponse("id-1", "accepte");
-    expect(written).toEqual({ called: true, response: "accepte" });
+    expect(written).toEqual({ called: true, calledAt: expect.any(String), response: "accepte" });
     expect(r.ok && [r.contact.called, r.contact.response]).toEqual([true, "accepte"]);
   });
 

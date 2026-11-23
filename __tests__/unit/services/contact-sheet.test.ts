@@ -14,6 +14,7 @@ const contact = {
   phone: null,
   email: null,
   called: false,
+  calledAt: null,
   response: "enAttente" as const,
   nextFollowUp: null,
   createdAt: "2026-11-01T09:00:00.000Z",

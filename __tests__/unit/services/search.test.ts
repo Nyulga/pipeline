@@ -9,6 +9,7 @@ const contact = (over: Partial<Contact> = {}): Contact => ({
   phone: "06 12 34 56 78",
   email: "helene@eole.fr",
   called: false,
+  calledAt: null,
   response: "enAttente",
   nextFollowUp: null,
   createdAt: "2026-11-01T09:00:00.000Z",

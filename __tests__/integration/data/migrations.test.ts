@@ -57,3 +57,11 @@ describe("migration 3 · prochaine relance (lot 3)", () => {
     await db.execute("UPDATE contacts SET next_follow_up = '2026-12-03' WHERE id = 'v1-a'");
   });
 });
+
+describe("migration 5 · date d'appel (lot 10)", () => {
+  it("les contacts d'avant gardent leur suivi, sans date d'appel", async () => {
+    const records = await selectContactRecords();
+    const v1a = records.find((r) => r.id === "v1-a")!;
+    expect(v1a).toMatchObject({ called: 1, response: "accepte", called_at: null });
+  });
+});

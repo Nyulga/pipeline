@@ -15,7 +15,7 @@ import {
 } from "@/services/contact-model";
 import { dueFollowUps, parseFollowUpDate, todayInParis, type DueFollowUp } from "@/services/follow-up";
 import { matchesSearch, normalizeForSearch } from "@/services/search";
-import { markCalled, markNotCalled, parseStage, trackingForStage, withResponse, type Tracking } from "@/services/tracking";
+import { markCalled, markNotCalled, nextCalledAt, parseStage, trackingForStage, withResponse, type Tracking } from "@/services/tracking";
 
 export {
   CONTACT_FIELDS,
@@ -73,6 +73,7 @@ function toContact(r: ContactRecord): Contact {
     phone: r.phone,
     email: r.email,
     called: r.called === 1,
+    calledAt: r.called_at,
     response: r.response,
     nextFollowUp: r.next_follow_up,
     createdAt: r.created_at,
@@ -131,7 +132,11 @@ export type TrackingResult = { ok: true; contact: Contact } | { ok: false; error
 
 /** Applique une règle de suivi au contact `id` et enregistre le résultat (lecture et écriture atomiques). */
 async function updateTracking(id: string, rule: (t: Tracking) => Tracking): Promise<TrackingResult> {
-  const updated = await updateContactTracking(id, (current) => rule(toContact(current)));
+  const updated = await updateContactTracking(id, (current) => {
+    const before = toContact(current);
+    const next = rule(before);
+    return { ...next, calledAt: nextCalledAt(before, next.called, new Date()) };
+  });
   if (!updated) return { ok: false, error: "Contact introuvable." };
   return { ok: true, contact: toContact(updated) };
 }

@@ -24,6 +24,8 @@ export type Contact = {
   phone: string | null;
   email: string | null;
   called: boolean;
+  /** Instant de l'appel (ISO, UTC), ou null : pas appelé, ou appelé avant le lot 10. */
+  calledAt: string | null;
   response: ContactResponse;
   /** Prochaine relance, un jour AAAA-MM-JJ, ou null. */
   nextFollowUp: string | null;
