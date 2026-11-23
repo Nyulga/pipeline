@@ -94,7 +94,7 @@ export function ContactCard({
               <li className="flex min-w-0 items-center gap-1.5">
                 <MailIcon aria-hidden className="size-3 shrink-0" />
                 <a href={mailtoHref(c.email)} className={cn(TOUCH_TARGET, "min-w-0 hover:text-foreground")}>
-                  <span className="truncate">{c.email}</span>
+                  <span className="block truncate">{c.email}</span>
                 </a>
               </li>
             )}

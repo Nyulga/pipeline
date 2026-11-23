@@ -54,7 +54,7 @@ export function ContactsView({
     const s = params.toString();
     startTransition(() => {
       showTab(next);
-      router.replace(`${window.location.pathname}${s ? `?${s}` : ""}`, { scroll: false });
+      router.replace(`${window.location.pathname}${s ? `?${s}` : ""}${window.location.hash}`, { scroll: false });
     });
   }
   const [errors, setErrors] = useState<Record<string, string>>({});

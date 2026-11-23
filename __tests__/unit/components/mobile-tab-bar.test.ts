@@ -66,6 +66,19 @@ describe("MobileTabBar : la barre d'onglets du téléphone (lot 11)", () => {
     window.history.replaceState(null, "", "/");
   });
 
+  it("l'ancre n'est lue qu'à l'arrivée : une adresse suivante sans ancre garde l'onglet (2e revue de la PR #25)", async () => {
+    window.history.replaceState(null, "", "/#mes-contacts");
+    const { rerender } = render(createElement(MobileTabBar));
+    // Changer de vue, ouvrir une fiche ou filtrer : la nouvelle adresse n'a plus d'ancre.
+    window.history.replaceState(null, "", "/?vue=etapes");
+    search = "vue=etapes";
+    await act(async () => {
+      rerender(createElement(MobileTabBar));
+    });
+    expect(current()).toEqual(["Étapes"]);
+    window.history.replaceState(null, "", "/");
+  });
+
   it("toucher « Contacts » le met en cours", async () => {
     render(createElement(MobileTabBar));
     await act(async () => {

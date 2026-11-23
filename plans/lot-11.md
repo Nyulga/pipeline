@@ -55,3 +55,8 @@ Issue #19. Pas de changement de base ni de service : tout est dans la présentat
 - **44 px** aussi pour le bouton « Annuler » du message et le lien « Mes contacts » de la fiche ; liens au doigt en `inline-flex` + `min-h-11` (plus d'interligne de 44 px) ; la liste d'onglets prend 44 px + sa marge.
 - **Barre** : rechargée sur `#mes-contacts`, elle allume « Contacts » ou « Étapes ».
 - **Réduire les animations** : délais coupés aussi.
+
+## Après la 2e revue de la PR #25
+- La barre ne lit l'ancre qu'à l'arrivée : la vue, une fiche ou un filtre (adresses sans ancre) ne rallument plus « Aujourd'hui ».
+- Changer de vue garde l'ancre de l'adresse.
+- L'e-mail long se tronque avec « … » au doigt comme à la souris (`block truncate`).

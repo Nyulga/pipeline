@@ -211,6 +211,16 @@ describe("ContactsView : la vue vit dans l'adresse (lot 11)", () => {
     expect(replace).toHaveBeenLastCalledWith("/?q=nord&etape=accepte", { scroll: false });
   });
 
+  it("changer de vue garde l'ancre de l'adresse (2e revue de la PR #25)", async () => {
+    replace.mockReset();
+    window.history.replaceState(null, "", "/?q=nord#mes-contacts");
+    render(createElement(ContactsView, { contacts }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Par étape" }));
+    });
+    expect(replace).toHaveBeenLastCalledWith("/?q=nord&vue=etapes#mes-contacts", { scroll: false });
+  });
+
   it("après un changement de vue, une navigation qui ramène la liste l'affiche (revue de la PR #25)", async () => {
     const { rerender } = render(createElement(ContactsView, { contacts }));
     await act(async () => {

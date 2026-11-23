@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ColumnsIcon, SunIcon, UsersIcon, type LucideIcon } from "lucide-react";
@@ -10,13 +10,12 @@ import { buttonVariants } from "@/components/ui/button";
 
 type Tab = "aujourdhui" | "contacts" | "etapes";
 
-// L'ancre de l'adresse (#mes-contacts…), lue dans le navigateur ; vide au rendu serveur.
-const subscribeHash = (onChange: () => void) => {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-};
-const readHash = () => window.location.hash;
+// L'ancre de l'adresse à l'arrivée sur la page (#mes-contacts…), lue une seule fois dans le navigateur :
+// les adresses suivantes (vue, fiche, filtre) n'en ont plus. Vide au rendu serveur ; oubliée au démontage.
+let arrivalHash: string | null = null;
+const readArrivalHash = () => (arrivalHash ??= window.location.hash);
 const noHash = () => "";
+const subscribeNothing = () => () => {};
 
 /**
  * Barre d'onglets du téléphone (lot 11), fixée en bas, masquée à partir de `md`.
@@ -30,7 +29,13 @@ export function MobileTabBar() {
   const etape = params.get("etape");
   const vue = parseView(params.get("vue"));
   // Section touchée dans la barre ; avant cela, celle de l'ancre (rechargement sur #mes-contacts).
-  const hash = useSyncExternalStore(subscribeHash, readHash, noHash);
+  const hash = useSyncExternalStore(subscribeNothing, readArrivalHash, noHash);
+  useEffect(
+    () => () => {
+      arrivalHash = null;
+    },
+    [],
+  );
   const [touched, setSection] = useState<"aujourdhui" | "contacts" | null>(null);
   const section = touched ?? (hash === "#mes-contacts" ? "contacts" : "aujourdhui");
   const current: Tab = section === "aujourdhui" ? "aujourdhui" : vue === "etapes" ? "etapes" : "contacts";

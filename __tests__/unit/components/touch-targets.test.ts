@@ -68,6 +68,8 @@ describe("zones à toucher ≥ 44 px sur écran tactile (lot 11)", () => {
     render(createElement(ContactCard, { contact: c, onStageChange: vi.fn() }));
     for (const name of ["Claire Martin", "06 12 34 56 78", "claire@exemple.fr"])
       expect(screen.getByRole("link", { name }).className).toContain(TALL);
+    // L'e-mail se tronque avec « … » au doigt comme à la souris : le texte est un bloc (2e revue de la PR #25).
+    expect(screen.getByText("claire@exemple.fr").className).toMatch(/(^|\s)block(\s|$)/);
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /^Étape de Claire Martin/ }));
