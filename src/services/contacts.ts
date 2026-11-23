@@ -15,7 +15,7 @@ import {
 } from "@/services/contact-model";
 import { dueFollowUps, parseFollowUpDate, todayInParis, type DueFollowUp } from "@/services/follow-up";
 import { matchesSearch, normalizeForSearch } from "@/services/search";
-import { markCalled, markNotCalled, withResponse, type Tracking } from "@/services/tracking";
+import { markCalled, markNotCalled, parseStage, trackingForStage, withResponse, type Tracking } from "@/services/tracking";
 
 export {
   CONTACT_FIELDS,
@@ -146,6 +146,13 @@ export async function setCalled(id: string, called: unknown): Promise<TrackingRe
 export async function setResponse(id: string, response: unknown): Promise<TrackingResult> {
   if (!isContactResponse(response)) return { ok: false, error: "Réponse inconnue." };
   return updateTracking(id, (t) => withResponse(t, response));
+}
+
+/** Place le contact à une étape : l'appel et la réponse correspondants, en une écriture. */
+export async function setStage(id: string, stage: unknown): Promise<TrackingResult> {
+  const s = parseStage(stage);
+  if (!s) return { ok: false, error: "Étape inconnue." };
+  return updateTracking(id, () => trackingForStage(s));
 }
 
 /** Fixe la prochaine relance du contact (une valeur vide l'efface). Une date invalide n'écrit rien. */

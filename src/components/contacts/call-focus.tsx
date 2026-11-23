@@ -2,15 +2,16 @@
 
 import { useRef, useState, useTransition } from "react";
 import { CheckIcon, ClockIcon, PhoneIcon, XIcon } from "lucide-react";
-import { setCalledAction, setFollowUpAction, setResponseAction, type TrackingActionState } from "@/app/actions";
+import { setFollowUpAction, setStageAction, type TrackingActionState } from "@/app/actions";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { SAVE_FAILED_MESSAGE, toCallCount } from "@/components/contacts/texts";
-import { FollowUpBadge, StageBadge } from "@/components/status-badge";
+import { dismissUndo, showUndo } from "@/components/contacts/undo-toast";
+import { FollowUpBadge, StageBadge, stageStyles } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { callQueue, nextDay, type QueueReason } from "@/services/call-queue";
-import type { Contact, ContactResponse } from "@/services/contact-model";
-import { markCalled, withResponse } from "@/services/tracking";
+import type { Contact } from "@/services/contact-model";
+import { stageOf, trackingForStage, type Stage } from "@/services/tracking";
 
 type Patch = Partial<Pick<Contact, "called" | "response" | "nextFollowUp">>;
 
@@ -42,6 +43,8 @@ const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 export function CallFocus({ contacts, today }: { contacts: Contact[]; today: string }) {
   const [local, setLocal] = useState<Local>({ base: contacts, entries: [], pinned: null });
   const seq = useRef(0);
+  // Dernier geste par personne : seul lui peut proposer « Annuler » une fois enregistré.
+  const lastGesture = useRef<Record<string, number>>({});
   const [error, setError] = useState<{ id: string; message: string } | null>(null);
   const [, startTransition] = useTransition();
 
@@ -66,8 +69,15 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
   const others = queue.filter((i) => i.contact.id !== current?.contact.id);
   const next = others.slice(0, 3);
 
-  function save(c: Contact, patch: Patch, pin: boolean, action: () => Promise<TrackingActionState>) {
+  function save(
+    c: Contact,
+    patch: Patch,
+    pin: boolean,
+    action: () => Promise<TrackingActionState>,
+    onSaved?: () => void,
+  ) {
     const n = ++seq.current;
+    lastGesture.current[c.id] = n;
     setError(null);
     setLocal((s) => ({
       ...s,
@@ -75,9 +85,11 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
       pinned: pin ? c.id : s.pinned === c.id ? null : s.pinned,
     }));
     startTransition(async () => {
-      const r = await action().catch(() => SAVE_FAILED);
+      // Une erreur levée avant même la promesse compte comme un échec, pas comme une exception perdue.
+      const r = await Promise.resolve().then(action).catch(() => SAVE_FAILED);
       if (r.ok) {
         setLocal((s) => ({ ...s, entries: s.entries.map((e) => (e.seq === n ? { ...e, settled: true } : e)) }));
+        if (lastGesture.current[c.id] === n) onSaved?.();
         return;
       }
       // Seul ce changement est annulé : ceux qui ont réussi avant lui restent.
@@ -86,12 +98,35 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
     });
   }
 
-  const call = (c: Contact) => save(c, markCalled(c), true, () => setCalledAction(c.id, true));
-  const answer = (c: Contact, response: ContactResponse) =>
-    save(c, withResponse(c, response), false, () => setResponseAction(c.id, response));
+  /** Change l'étape ; une fois enregistrée, « Annuler » remet l'étape d'avant (la personne revient dans la file). */
+  /** L'« Annuler » d'un geste : remet aussi la carte comme elle était (personne épinglée ou non). */
+  function undoFor(c: Contact) {
+    const wasPinned = state.pinned === c.id;
+    // Un autre geste sur cette personne n'est pas encore enregistré : l'état « d'avant » n'est pas sûr.
+    const busy = state.entries.some((e) => e.id === c.id && !e.settled);
+    // Le message « Annuler » en place est périmé dès ce geste.
+    dismissUndo(c.id);
+    return (message: string, patch: Patch, undo: () => Promise<TrackingActionState>) =>
+      busy ? undefined : () => showUndo(c.id, message, () => save(c, patch, wasPinned, undo));
+  }
+
+  function moveTo(c: Contact, stage: Stage, pin: boolean) {
+    const before = stageOf(c);
+    const undo = undoFor(c)(`${c.name} : ${stageStyles[stage].label}`, trackingForStage(before), () =>
+      setStageAction(c.id, before),
+    );
+    save(c, trackingForStage(stage), pin, () => setStageAction(c.id, stage), undo);
+  }
+
+  const call = (c: Contact) => moveTo(c, "appeleEnAttente", true);
+  const answer = (c: Contact, stage: "accepte" | "refuse") => moveTo(c, stage, false);
   const later = (c: Contact) => {
     const day = nextDay(today);
-    save(c, { nextFollowUp: day }, false, () => setFollowUpAction(c.id, day));
+    const before = c.nextFollowUp;
+    const undo = undoFor(c)(`${c.name} : relance demain`, { nextFollowUp: before }, () =>
+      setFollowUpAction(c.id, before ?? ""),
+    );
+    save(c, { nextFollowUp: day }, false, () => setFollowUpAction(c.id, day), undo);
   };
 
   return (

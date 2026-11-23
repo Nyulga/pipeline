@@ -75,7 +75,7 @@ Remplace le thème « Papier » (clair et sombre) : police Plus Jakarta Sans, ar
 ## Lot 8 · Suivi en un geste, avec « Annuler »
 **Critères d'acceptation**
 - Sur chaque contact, un seul bouton d'étape (À appeler, Appelé · en attente, Accepté, Refusé) remplace les quatre boutons ; choisir une étape enregistre l'appel et la réponse correspondants.
-- Après chaque changement, un message « Marqué … · Annuler » reste affiché quelques secondes ; « Annuler » remet exactement le suivi d'avant.
+- Après chaque changement, un message « Claire Martin : Refusé · Annuler » reste affiché quelques secondes ; « Annuler » remet exactement le suivi d'avant.
 - Repasser en « À appeler » remet la réponse en attente ; plus de bouton grisé.
 
 ## Lot 9 · Fiche dans un panneau

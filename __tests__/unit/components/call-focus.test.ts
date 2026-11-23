@@ -5,12 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/actions", () => ({
   addContactAction: vi.fn(),
-  setCalledAction: vi.fn(),
-  setResponseAction: vi.fn(),
+  setStageAction: vi.fn(),
   setFollowUpAction: vi.fn(),
 }));
+vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { dismiss: vi.fn() }) }));
 
-import { setCalledAction, setFollowUpAction, setResponseAction } from "@/app/actions";
+import { toast } from "sonner";
+import { setFollowUpAction, setStageAction } from "@/app/actions";
 import { CallFocus } from "@/components/contacts/call-focus";
 import { makeContact } from "./helpers/contact";
 
@@ -26,13 +27,17 @@ const press = (name: string) =>
   act(async () => {
     fireEvent.click(within(focus()).getByRole("button", { name }));
   });
+// jsdom ne sait pas suivre un lien tel: : on empêche la navigation, l'action est testée sans elle.
 const pressLink = (name: string) =>
   act(async () => {
-    fireEvent.click(within(focus()).getByRole("link", { name }));
+    const link = within(focus()).getByRole("link", { name });
+    link.addEventListener("click", (e) => e.preventDefault(), { once: true });
+    fireEvent.click(link);
   });
 
 beforeEach(() => {
-  for (const f of [setCalledAction, setResponseAction, setFollowUpAction]) vi.mocked(f).mockReset().mockResolvedValue({ ok: true });
+  for (const f of [setStageAction, setFollowUpAction]) vi.mocked(f).mockReset().mockResolvedValue({ ok: true });
+  vi.mocked(toast).mockReset();
 });
 afterEach(cleanup);
 
@@ -51,7 +56,7 @@ describe("CallFocus : la prochaine personne à appeler (lot 7)", () => {
     const link = within(focus()).getByRole("link", { name: "Appeler" });
     expect(link.getAttribute("href")).toBe("tel:0798765432");
     await pressLink("Appeler");
-    expect(setCalledAction).toHaveBeenCalledWith("fresh", true);
+    expect(setStageAction).toHaveBeenCalledWith("fresh", "appeleEnAttente");
     expect(current()).toBe("Thomas Bernard");
   });
 
@@ -59,7 +64,7 @@ describe("CallFocus : la prochaine personne à appeler (lot 7)", () => {
     render(createElement(CallFocus, { contacts: [nophone], today: TODAY }));
     expect(within(focus()).queryByRole("link", { name: "Appeler" })).toBeNull();
     await press("Marquer appelé");
-    expect(setCalledAction).toHaveBeenCalledWith("nophone", true);
+    expect(setStageAction).toHaveBeenCalledWith("nophone", "appeleEnAttente");
     expect(current()).toBe("Inès Petit");
   });
 
@@ -69,7 +74,7 @@ describe("CallFocus : la prochaine personne à appeler (lot 7)", () => {
   ])("« %s » enregistre la réponse et passe à la personne suivante", async (label, response) => {
     render(createElement(CallFocus, { contacts: [late, fresh], today: TODAY }));
     await press(label);
-    expect(setResponseAction).toHaveBeenCalledWith("late", response);
+    expect(setStageAction).toHaveBeenCalledWith("late", response);
     expect(current()).toBe("Thomas Bernard");
   });
 
@@ -139,12 +144,102 @@ describe("CallFocus : quand le serveur renvoie la liste (revue de la PR #21)", (
   });
 
   it("un échec n'annule que son propre changement : l'appel déjà enregistré reste", async () => {
-    vi.mocked(setResponseAction).mockResolvedValue({ ok: false, error: "Réponse invalide." });
+    vi.mocked(setStageAction).mockResolvedValueOnce({ ok: true }).mockResolvedValueOnce({ ok: false, error: "Réponse invalide." });
     render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
     await pressLink("Appeler");
     await press("Accepté");
     expect(current()).toBe("Thomas Bernard");
     expect(within(focus()).getByText("Appelé · en attente")).toBeTruthy();
     expect(within(focus()).getByRole("alert").textContent).toBe("Réponse invalide.");
+  });
+});
+
+const lastToast = () => {
+  const [message, options] = vi.mocked(toast).mock.calls.at(-1)!;
+  return { message, options: options as { id: string; action: { label: string; onClick: () => void }; duration: number } };
+};
+
+describe("CallFocus : « Annuler » après chaque geste (lot 8)", () => {
+  it("après « Refusé » : « Claire Martin : Refusé · Annuler », qui remet l'étape d'avant et la ramène", async () => {
+    render(createElement(CallFocus, { contacts: [late, fresh], today: TODAY }));
+    await press("Refusé");
+    expect(lastToast().message).toBe("Claire Martin : Refusé");
+    expect(lastToast().options.action.label).toBe("Annuler");
+    expect(lastToast().options.duration).toBe(6000);
+    expect(current()).toBe("Thomas Bernard");
+    await act(async () => lastToast().options.action.onClick());
+    expect(setStageAction).toHaveBeenLastCalledWith("late", "appeleEnAttente");
+    expect(current()).toBe("Claire Martin");
+  });
+
+  it("après « Appeler » : « Annuler » remet le contact à appeler", async () => {
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    expect(lastToast().message).toBe("Thomas Bernard : Appelé · en attente");
+    await act(async () => lastToast().options.action.onClick());
+    expect(setStageAction).toHaveBeenLastCalledWith("fresh", "aAppeler");
+    expect(within(focus()).getByText("À appeler", { selector: "[data-slot=badge]" })).toBeTruthy();
+  });
+
+  it("après « Plus tard » : « Claire Martin : relance demain · Annuler », qui remet la relance d'avant", async () => {
+    render(createElement(CallFocus, { contacts: [late, fresh], today: TODAY }));
+    await press("Plus tard");
+    expect(lastToast().message).toBe("Claire Martin : relance demain");
+    await act(async () => lastToast().options.action.onClick());
+    expect(setFollowUpAction).toHaveBeenLastCalledWith("late", "2026-11-20");
+    expect(current()).toBe("Claire Martin");
+  });
+
+  it("un geste qui échoue n'affiche pas de message « Annuler »", async () => {
+    vi.mocked(setFollowUpAction).mockResolvedValue({ ok: false, error: "Date invalide." });
+    render(createElement(CallFocus, { contacts: [late], today: TODAY }));
+    await press("Plus tard");
+    expect(toast).not.toHaveBeenCalled();
+  });
+});
+
+describe("CallFocus : « Annuler » après « Appeler » puis l'issue (revue de la PR #22)", () => {
+  it.each([["Refusé"], ["Accepté"], ["Plus tard"]])(
+    "Appeler, puis %s, puis Annuler : la personne revient sur la carte, appelée",
+    async (label) => {
+      render(createElement(CallFocus, { contacts: [fresh, nophone], today: TODAY }));
+      await pressLink("Appeler");
+      await press(label);
+      expect(current()).toBe("Inès Petit");
+      await act(async () => lastToast().options.action.onClick());
+      expect(current()).toBe("Thomas Bernard");
+      expect(within(focus()).getByText("Appelé · en attente", { selector: "[data-slot=badge]" })).toBeTruthy();
+    },
+  );
+
+  it("un nouveau geste retire tout de suite le message « Annuler » en place", async () => {
+    vi.mocked(toast.dismiss).mockClear();
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    const answer = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockReturnValueOnce(answer.promise);
+    await press("Accepté");
+    expect(toast.dismiss).toHaveBeenCalledWith("annuler-fresh");
+    await act(async () => answer.resolve({ ok: true }));
+  });
+
+  it("un nouveau geste sur la même personne remplace son message « Annuler »", async () => {
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    const first = lastToast().options.id;
+    await press("Accepté");
+    expect(lastToast().options.id).toBe(first);
+    expect(first).toBe("annuler-fresh");
+  });
+
+  it("pas d'« Annuler » pour un geste fait pendant qu'un autre s'enregistre encore sur la même personne", async () => {
+    const forCall = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockReturnValueOnce(forCall.promise).mockResolvedValueOnce({ ok: true });
+    render(createElement(CallFocus, { contacts: [fresh], today: TODAY }));
+    await pressLink("Appeler");
+    await press("Accepté");
+    await act(async () => forCall.resolve({ ok: true }));
+    // Ni pour le second geste, ni pour le premier qui finit après lui : son « Annuler » serait faux.
+    expect(toast).not.toHaveBeenCalled();
   });
 });

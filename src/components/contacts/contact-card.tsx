@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { BellIcon, MailIcon, PhoneIcon, PhoneOffIcon } from "lucide-react";
+import { BellIcon, ChevronDownIcon, MailIcon, PhoneIcon } from "lucide-react";
+import { cn } from "cn";
 import { formatDay } from "@/components/contacts/texts";
-import { StageBadge, statusStyles } from "@/components/status-badge";
+import { StageBadge, stageStyles } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,14 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-  RESPONSES,
-  isContactResponse,
-  type Contact,
-  type ContactResponse,
-} from "@/services/contact-model";
-import { canCancelCall, stageOf } from "@/services/tracking";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { Contact } from "@/services/contact-model";
+import { STAGES, parseStage, stageOf, type Stage } from "@/services/tracking";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
@@ -43,18 +45,14 @@ export function ContactCard({
   contact: c,
   error,
   compact = false,
-  onCalledChange,
-  onResponseChange,
+  onStageChange,
 }: {
   contact: Contact;
   error?: string;
   compact?: boolean;
-  onCalledChange: (called: boolean) => void;
-  onResponseChange: (response: ContactResponse) => void;
+  onStageChange: (stage: Stage) => void;
 }) {
-  // Annuler l'appel effacerait la réponse : on l'interdit tant qu'une réponse est donnée.
-  const cancelBlocked = c.called && !canCancelCall(c);
-  const hintId = `appel-${c.id}-aide`;
+  const stage = stageOf(c);
 
   return (
     <Card className="h-full" size={compact ? "sm" : "default"}>
@@ -98,12 +96,7 @@ export function ContactCard({
           </ul>
         )}
         {!compact && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StageBadge stage={stageOf(c)} />
-            <span className="ml-auto text-xs text-muted-foreground">
-              Ajouté le {dateFormat.format(new Date(c.createdAt))}
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground">Ajouté le {dateFormat.format(new Date(c.createdAt))}</p>
         )}
         {c.nextFollowUp && (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -117,40 +110,43 @@ export function ContactCard({
           </p>
         )}
       </CardContent>
-      <CardFooter className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant={c.called ? "outline" : "default"}
-          disabled={cancelBlocked}
-          aria-describedby={cancelBlocked ? hintId : undefined}
-          onClick={() => onCalledChange(!c.called)}
-        >
-          {c.called ? <PhoneOffIcon data-icon="inline-start" /> : <PhoneIcon data-icon="inline-start" />}
-          {c.called ? "Annuler l'appel" : "Marquer appelé"}
-        </Button>
-        <ToggleGroup
-          variant="outline"
-          size="sm"
-          spacing={0}
-          value={[c.response]}
-          onValueChange={(v) => isContactResponse(v[0]) && onResponseChange(v[0])}
-          aria-label={`Réponse de ${c.name}`}
-        >
-          {RESPONSES.map((r) => (
-            <ToggleGroupItem
-              key={r}
-              value={r}
-              className="aria-pressed:bg-primary aria-pressed:text-primary-foreground data-pressed:bg-primary data-pressed:text-primary-foreground"
+      <CardFooter>
+        {/* Un seul geste : le bouton montre l'étape, le menu permet d'en changer. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={
+                  compact
+                    ? `Changer d'étape de ${c.name} (${stageStyles[stage].label})`
+                    : `Étape de ${c.name} : ${stageStyles[stage].label}`
+                }
+                className={cn("-ml-1 gap-1 px-1", compact && "text-muted-foreground")}
+              />
+            }
+          >
+            {compact ? <span>Changer d&apos;étape</span> : <StageBadge stage={stage} />}
+            <ChevronDownIcon data-icon="inline-end" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuRadioGroup
+              value={stage}
+              onValueChange={(v) => {
+                const next = parseStage(v);
+                if (next) onStageChange(next);
+              }}
             >
-              {statusStyles[r].label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        {cancelBlocked && (
-          <p id={hintId} className="basis-full text-xs text-muted-foreground">
-            Remets d&apos;abord la réponse « En attente ».
-          </p>
-        )}
+              {STAGES.map((s) => (
+                <DropdownMenuRadioItem key={s} value={s} closeOnClick>
+                  <span aria-hidden className={cn("size-2 rounded-full", stageStyles[s].dot)} />
+                  {stageStyles[s].label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardFooter>
     </Card>
   );

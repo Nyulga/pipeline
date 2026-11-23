@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ThemeToggle, themeInitScript } from "@/components/theme-toggle";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ThemeToggle />
         </div>
         {children}
+        <Toaster position="bottom-center" />
       </body>
     </html>
   );

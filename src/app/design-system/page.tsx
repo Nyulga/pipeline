@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ChevronDownIcon } from "lucide-react";
 import { StageBadge, StatusBadge, statusStyles, type Status } from "@/components/status-badge";
 import { STAGES } from "@/services/tracking";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "cn";
 
 export const metadata: Metadata = {
   title: "Design system · Pipeline",
@@ -64,8 +64,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
-
-const responses = ["Accepté", "Refusé", "En attente"] as const;
 
 export default function DesignSystemPage() {
   return (
@@ -178,7 +176,7 @@ export default function DesignSystemPage() {
           ))}
         </div>
         <p className="text-sm text-muted-foreground">
-          L&apos;étape se déduit de l&apos;appel et de la réponse ; c&apos;est elle que montre la carte d&apos;un contact.
+          L&apos;étape se déduit de l&apos;appel et de la réponse. Sur la carte d&apos;un contact, un seul bouton la montre et ouvre le menu des 4 étapes ; chaque changement propose « Annuler ».
         </p>
       </Section>
 
@@ -195,31 +193,12 @@ export default function DesignSystemPage() {
                 <br />
                 claire@ateliernord.fr
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                <StatusBadge status="appele" />
-                <StatusBadge status="accepte" />
-              </div>
             </CardContent>
-            <CardFooter className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm">
-                Marquer non appelé
+            <CardFooter>
+              <Button variant="ghost" size="sm" className="-ml-1 gap-1 px-1" aria-label="Étape de Claire Martin : Accepté">
+                <StageBadge stage="accepte" />
+                <ChevronDownIcon data-icon="inline-end" />
               </Button>
-              <div role="group" aria-label="Réponse" className="inline-flex overflow-hidden rounded-full border border-input">
-                {responses.map((r, i) => (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={r === "Accepté"}
-                    className={cn(
-                      "h-7 px-2.5 text-xs font-medium text-muted-foreground",
-                      i > 0 && "border-l border-input",
-                      "aria-pressed:bg-primary aria-pressed:text-primary-foreground",
-                    )}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
             </CardFooter>
           </Card>
 
@@ -232,13 +211,12 @@ export default function DesignSystemPage() {
               <p className="font-mono text-xs leading-relaxed text-muted-foreground">
                 07 98 76 54 32
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                <StatusBadge status="nonAppele" />
-                <StatusBadge status="enAttente" />
-              </div>
             </CardContent>
             <CardFooter>
-              <Button size="sm">Marquer appelé</Button>
+              <Button variant="ghost" size="sm" className="-ml-1 gap-1 px-1" aria-label="Étape de Thomas Bernard : À appeler">
+                <StageBadge stage="aAppeler" />
+                <ChevronDownIcon data-icon="inline-end" />
+              </Button>
             </CardFooter>
           </Card>
         </div>

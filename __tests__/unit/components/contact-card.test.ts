@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContactCard } from "@/components/contacts/contact-card";
@@ -10,11 +10,16 @@ const contact = (over: Partial<Contact> = {}) =>
   makeContact({ name: "Claire Martin", company: "Atelier Nord", ...over });
 
 function show(c: Contact, { error, compact }: { error?: string; compact?: boolean } = {}) {
-  const onCalledChange = vi.fn();
-  const onResponseChange = vi.fn();
-  render(createElement(ContactCard, { contact: c, error, compact, onCalledChange, onResponseChange }));
-  return { onCalledChange, onResponseChange };
+  const onStageChange = vi.fn();
+  render(createElement(ContactCard, { contact: c, error, compact, onStageChange }));
+  return { onStageChange };
 }
+
+/** Ouvre le menu d'étape de la carte. */
+const openStageMenu = () =>
+  act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: /Claire Martin/ }));
+  });
 
 const stageBadge = (label: string) => screen.queryByText(label, { selector: "[data-slot=badge]" });
 const isDisabled = (el: HTMLElement) => el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
@@ -34,30 +39,49 @@ describe("ContactCard : l'étape du contact", () => {
   });
 });
 
-describe("ContactCard : marquer et annuler l'appel", () => {
-  it("propose « Marquer appelé » pour un contact pas encore appelé", () => {
-    const { onCalledChange } = show(contact());
-    expect(stageBadge("À appeler")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Marquer appelé" }));
-    expect(onCalledChange).toHaveBeenCalledWith(true);
+describe("ContactCard : un seul bouton d'étape (lot 8)", () => {
+  it("le bouton montre l'étape actuelle et ouvre les 4 étapes, l'actuelle cochée", async () => {
+    show(contact({ called: true, response: "refuse" }));
+    expect(screen.getByRole("button", { name: "Étape de Claire Martin : Refusé" })).toBeTruthy();
+    await openStageMenu();
+    const items = screen.getAllByRole("menuitemradio");
+    expect(items.map((i) => i.textContent)).toEqual(["À appeler", "Appelé · en attente", "Accepté", "Refusé"]);
+    expect(items.filter((i) => i.getAttribute("aria-checked") === "true").map((i) => i.textContent)).toEqual(["Refusé"]);
   });
 
-  it("propose « Annuler l'appel » pour un contact appelé encore en attente", () => {
-    const { onCalledChange } = show(contact({ called: true }));
-    const cancel = screen.getByRole("button", { name: "Annuler l'appel" });
-    expect(isDisabled(cancel)).toBe(false);
-    fireEvent.click(cancel);
-    expect(onCalledChange).toHaveBeenCalledWith(false);
+  it("choisir une étape appelle onStageChange avec cette étape", async () => {
+    const { onStageChange } = show(contact());
+    await openStageMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitemradio", { name: "Accepté" }));
+    });
+    expect(onStageChange).toHaveBeenCalledWith("accepte");
   });
 
-  it("désactive « Annuler l'appel » tant que le contact a une réponse, et explique pourquoi", () => {
-    const { onCalledChange } = show(contact({ called: true, response: "accepte" }));
-    const cancel = screen.getByRole("button", { name: "Annuler l'appel" });
-    expect(isDisabled(cancel)).toBe(true);
-    fireEvent.click(cancel);
-    expect(onCalledChange).not.toHaveBeenCalled();
-    const hint = document.getElementById(cancel.getAttribute("aria-describedby") ?? "");
-    expect(hint?.textContent).toBe("Remets d'abord la réponse « En attente ».");
+  it("le menu se referme une fois l'étape choisie", async () => {
+    show(contact());
+    await openStageMenu();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitemradio", { name: "Refusé" }));
+    });
+    expect(screen.queryAllByRole("menuitemradio")).toHaveLength(0);
+  });
+
+  it("plus de « Marquer appelé », d'« Annuler l'appel » ni de sélecteur de réponse, et aucun bouton grisé", () => {
+    show(contact({ called: true, response: "accepte" }));
+    expect(screen.queryByRole("button", { name: "Marquer appelé" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Annuler l'appel" })).toBeNull();
+    expect(screen.queryByRole("group", { name: /^Réponse de/ })).toBeNull();
+    expect(screen.queryByText(/Remets d'abord/)).toBeNull();
+    for (const b of screen.getAllByRole("button")) expect(isDisabled(b)).toBe(false);
+  });
+});
+
+describe("ContactCard : vue compacte (revue de la PR #22)", () => {
+  it("le texte visible du bouton fait partie de son nom accessible", () => {
+    show(contact({ called: true, response: "accepte" }), { compact: true });
+    const button = screen.getByRole("button", { name: /^Changer d'étape/ });
+    expect(button.getAttribute("aria-label")).toBe("Changer d'étape de Claire Martin (Accepté)");
   });
 });
 
@@ -73,20 +97,7 @@ describe("ContactCard : la fiche (lot 3)", () => {
   });
 });
 
-describe("ContactCard : la réponse", () => {
-  it("le sélecteur de réponse montre la réponse active", () => {
-    show(contact({ called: true, response: "refuse" }));
-    const group = screen.getByRole("group", { name: "Réponse de Claire Martin" });
-    const pressed = [...group.querySelectorAll("button")].filter((b) => b.getAttribute("aria-pressed") === "true");
-    expect(pressed.map((b) => b.textContent)).toEqual(["Refusé"]);
-  });
-
-  it("choisir une réponse appelle onResponseChange avec cette réponse", () => {
-    const { onResponseChange } = show(contact());
-    fireEvent.click(screen.getByRole("button", { name: "Accepté" }));
-    expect(onResponseChange).toHaveBeenCalledWith("accepte");
-  });
-
+describe("ContactCard : les erreurs", () => {
   it("affiche l'erreur reçue sur la carte", () => {
     show(contact(), { error: "Contact introuvable." });
     expect(screen.getByRole("alert").textContent).toBe("Contact introuvable.");
