@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Les Server Actions et les notifications sont remplacées : on teste l'écran, pas le serveur.
 vi.mock("@/app/actions", () => ({ setStageAction: vi.fn() }));
-vi.mock("sonner", () => ({ toast: vi.fn() }));
+vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { dismiss: vi.fn() }) }));
 
 import { toast } from "sonner";
 import { setStageAction } from "@/app/actions";
@@ -102,6 +102,17 @@ describe("ContactsView : le suivi en un geste (lot 8)", () => {
     await choose("Ana", "Refusé");
     const ids = vi.mocked(toast).mock.calls.map((c) => (c[1] as { id: string }).id);
     expect(ids).toEqual(["annuler-a", "annuler-a"]);
+  });
+
+  it("le premier changement, enregistré après un second, n'affiche pas son « Annuler » périmé", async () => {
+    const first = pending<{ ok: true }>();
+    vi.mocked(setStageAction).mockReturnValueOnce(first.promise).mockResolvedValueOnce({ ok: true });
+    render(createElement(ContactsView, { contacts }));
+    await choose("Ana", "Accepté");
+    await choose("Ana", "Refusé");
+    await act(async () => first.resolve({ ok: true }));
+    expect(toast).not.toHaveBeenCalled();
+    expect(toast.dismiss).toHaveBeenCalledWith("annuler-a");
   });
 
   it("pas d'« Annuler » pour un changement fait pendant qu'un autre s'enregistre encore sur le même contact", async () => {

@@ -5,7 +5,7 @@ import { setStageAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
 import { StageBoard } from "@/components/contacts/stage-board";
 import { SAVE_FAILED_MESSAGE, contactCount } from "@/components/contacts/texts";
-import { showUndo } from "@/components/contacts/undo-toast";
+import { dismissUndo, showUndo } from "@/components/contacts/undo-toast";
 import { stageStyles } from "@/components/status-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Contact } from "@/services/contact-model";
@@ -23,8 +23,11 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
   );
   const [, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Changements encore en cours, par contact : pendant ce temps, l'étape « d'avant » n'est pas sûre.
+  // Par contact : changements encore en cours, et numéro du dernier geste.
+  // « Annuler » n'est proposé que pour le dernier geste, fait quand rien d'autre n'était en cours.
   const inFlight = useRef<Record<string, number>>({});
+  const lastGesture = useRef<Record<string, number>>({});
+  const gestures = useRef(0);
 
   /** Place le contact à une étape ; `undoable` : proposer « Annuler » une fois enregistré. */
   function changeStage(c: Contact, stage: Stage, allowUndo = true) {
@@ -32,19 +35,28 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
     if (stage === before) return;
     // Pas d'« Annuler » si un autre changement de ce contact n'est pas encore enregistré : « avant » serait faux.
     const undoable = allowUndo && !inFlight.current[c.id];
+    if (!undoable) dismissUndo(c.id);
+    const gesture = ++gestures.current;
+    lastGesture.current[c.id] = gesture;
     inFlight.current[c.id] = (inFlight.current[c.id] ?? 0) + 1;
     startTransition(async () => {
       applyOptimistic({ id: c.id, tracking: trackingForStage(stage) });
       // La mise à jour optimiste s'annule d'elle-même à la fin de la transition si rien n'a changé côté serveur.
-      const r = await setStageAction(c.id, stage).catch(() => SAVE_FAILED);
-      inFlight.current[c.id] -= 1;
+      let r: TrackingActionState;
+      try {
+        r = await setStageAction(c.id, stage);
+      } catch {
+        r = SAVE_FAILED;
+      } finally {
+        inFlight.current[c.id] -= 1;
+      }
       setErrors((prev) => {
         const next = { ...prev };
         delete next[c.id];
         if (!r.ok) next[c.id] = r.error;
         return next;
       });
-      if (r.ok && undoable) {
+      if (r.ok && undoable && lastGesture.current[c.id] === gesture) {
         const now = { ...c, ...trackingForStage(stage) };
         showUndo(c.id, `${c.name} : ${stageStyles[stage].label}`, () => changeStage(now, before, false));
       }

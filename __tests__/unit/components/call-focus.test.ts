@@ -8,7 +8,7 @@ vi.mock("@/app/actions", () => ({
   setStageAction: vi.fn(),
   setFollowUpAction: vi.fn(),
 }));
-vi.mock("sonner", () => ({ toast: vi.fn() }));
+vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { dismiss: vi.fn() }) }));
 
 import { toast } from "sonner";
 import { setFollowUpAction, setStageAction } from "@/app/actions";
@@ -228,6 +228,7 @@ describe("CallFocus : « Annuler » après « Appeler » puis l'issue (revue de 
     await pressLink("Appeler");
     await press("Accepté");
     await act(async () => forCall.resolve({ ok: true }));
-    expect(vi.mocked(toast).mock.calls.map((c) => c[0])).toEqual(["Thomas Bernard : Appelé · en attente"]);
+    // Ni pour le second geste, ni pour le premier qui finit après lui : son « Annuler » serait faux.
+    expect(toast).not.toHaveBeenCalled();
   });
 });

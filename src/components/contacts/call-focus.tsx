@@ -5,7 +5,7 @@ import { CheckIcon, ClockIcon, PhoneIcon, XIcon } from "lucide-react";
 import { setFollowUpAction, setStageAction, type TrackingActionState } from "@/app/actions";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { SAVE_FAILED_MESSAGE, toCallCount } from "@/components/contacts/texts";
-import { showUndo } from "@/components/contacts/undo-toast";
+import { dismissUndo, showUndo } from "@/components/contacts/undo-toast";
 import { FollowUpBadge, StageBadge, stageStyles } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -43,6 +43,8 @@ const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 export function CallFocus({ contacts, today }: { contacts: Contact[]; today: string }) {
   const [local, setLocal] = useState<Local>({ base: contacts, entries: [], pinned: null });
   const seq = useRef(0);
+  // Dernier geste par personne : seul lui peut proposer « Annuler » une fois enregistré.
+  const lastGesture = useRef<Record<string, number>>({});
   const [error, setError] = useState<{ id: string; message: string } | null>(null);
   const [, startTransition] = useTransition();
 
@@ -75,6 +77,7 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
     onSaved?: () => void,
   ) {
     const n = ++seq.current;
+    lastGesture.current[c.id] = n;
     setError(null);
     setLocal((s) => ({
       ...s,
@@ -82,10 +85,11 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
       pinned: pin ? c.id : s.pinned === c.id ? null : s.pinned,
     }));
     startTransition(async () => {
-      const r = await action().catch(() => SAVE_FAILED);
+      // Une erreur levée avant même la promesse compte comme un échec, pas comme une exception perdue.
+      const r = await Promise.resolve().then(action).catch(() => SAVE_FAILED);
       if (r.ok) {
         setLocal((s) => ({ ...s, entries: s.entries.map((e) => (e.seq === n ? { ...e, settled: true } : e)) }));
-        onSaved?.();
+        if (lastGesture.current[c.id] === n) onSaved?.();
         return;
       }
       // Seul ce changement est annulé : ceux qui ont réussi avant lui restent.
@@ -100,6 +104,7 @@ export function CallFocus({ contacts, today }: { contacts: Contact[]; today: str
     const wasPinned = state.pinned === c.id;
     // Un autre geste sur cette personne n'est pas encore enregistré : l'état « d'avant » n'est pas sûr.
     const busy = state.entries.some((e) => e.id === c.id && !e.settled);
+    if (busy) dismissUndo(c.id);
     return (message: string, patch: Patch, undo: () => Promise<TrackingActionState>) =>
       busy ? undefined : () => showUndo(c.id, message, () => save(c, patch, wasPinned, undo));
   }
