@@ -4,6 +4,7 @@ import {
   groupByStage,
   markCalled,
   markNotCalled,
+  nextCalledAt,
   parseStage,
   stageOf,
   trackingForStage,
@@ -111,5 +112,27 @@ describe("parseStage : l'étape lue dans l'adresse (lot 7)", () => {
   });
   it.each([undefined, null, "", "tous", "ACCEPTE", ["accepte"], 3])("%j → null (« Tous »)", (v) => {
     expect(parseStage(v)).toBeNull();
+  });
+});
+
+describe("nextCalledAt : la date de l'appel (lot 10)", () => {
+  const now = new Date("2026-11-25T10:00:00.000Z");
+
+  it("passer de « non appelé » à « appelé » date l'appel à maintenant", () => {
+    expect(nextCalledAt({ called: false, calledAt: null }, true, now)).toBe("2026-11-25T10:00:00.000Z");
+  });
+
+  it("rester appelé (en attente → accepté…) garde la date", () => {
+    expect(nextCalledAt({ called: true, calledAt: "2026-11-20T08:00:00.000Z" }, true, now)).toBe(
+      "2026-11-20T08:00:00.000Z",
+    );
+  });
+
+  it("un appel d'avant le lot 10 reste sans date", () => {
+    expect(nextCalledAt({ called: true, calledAt: null }, true, now)).toBeNull();
+  });
+
+  it("repasser « À appeler » efface la date", () => {
+    expect(nextCalledAt({ called: true, calledAt: "2026-11-20T08:00:00.000Z" }, false, now)).toBeNull();
   });
 });

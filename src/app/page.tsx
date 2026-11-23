@@ -7,6 +7,7 @@ import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-
 import { ContactSearch } from "@/components/contacts/contact-search";
 import { ExportButton } from "@/components/contacts/export-button";
 import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
+import { WeekSummarySection, WeekSummarySkeleton } from "@/components/contacts/week-summary";
 import { Today, TodayGreeting, TodayGreetingSkeleton, TodaySkeleton } from "@/components/contacts/today";
 import { getContactSheet } from "@/services/contact-sheet";
 import { parseStage } from "@/services/tracking";
@@ -55,6 +56,10 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
 
       <Suspense fallback={<DueFollowUpsSkeleton />}>
         <DueFollowUps linkParams={linkParamsOf(searchParams)} />
+      </Suspense>
+
+      <Suspense fallback={<WeekSummarySkeleton />}>
+        <WeekSummarySection linkParams={linkParamsOf(searchParams)} />
       </Suspense>
 
       <section aria-labelledby="mes-contacts" className="space-y-4">

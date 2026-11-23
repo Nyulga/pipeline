@@ -8,6 +8,8 @@ export type ContactRecord = {
   phone: string | null;
   email: string | null;
   called: number;
+  /** Instant de l'appel (ISO, UTC), ou null : pas appelé, ou appelé avant le lot 10. */
+  called_at: string | null;
   response: string;
   /** Prochaine relance, un jour AAAA-MM-JJ, ou null. */
   next_follow_up: string | null;
@@ -23,7 +25,7 @@ export type NewContactRecord = {
   response: string;
 };
 
-const COLUMNS = "id, name, company, phone, email, called, response, next_follow_up, created_at";
+const COLUMNS = "id, name, company, phone, email, called, called_at, response, next_follow_up, created_at";
 
 const INSERT_COLUMNS = "id, name, company, phone, email, called, response, created_at";
 
@@ -35,6 +37,7 @@ function toRecord(row: Record<string, unknown>): ContactRecord {
     phone: row.phone == null ? null : String(row.phone),
     email: row.email == null ? null : String(row.email),
     called: Number(row.called),
+    called_at: row.called_at == null ? null : String(row.called_at),
     response: String(row.response),
     next_follow_up: row.next_follow_up == null ? null : String(row.next_follow_up),
     created_at: String(row.created_at),
@@ -90,7 +93,8 @@ export function updateContactFollowUp(id: string, date: string | null): Promise<
   });
 }
 
-export type TrackingRecord = { called: boolean; response: string };
+/** Le suivi à écrire. Sans `calledAt`, la date d'appel en base ne change pas. */
+export type TrackingRecord = { called: boolean; calledAt?: string | null; response: string };
 
 /**
  * Lit le contact `id`, calcule son nouveau suivi avec `compute` (fourni par le service, qui porte la règle)
@@ -124,10 +128,11 @@ async function trackingTransaction(
   try {
     const { rows } = await tx.execute({ sql: `SELECT ${COLUMNS} FROM contacts WHERE id = ?`, args: [id] });
     if (!rows[0]) return null;
-    const t = compute(toRecord(rows[0] as Record<string, unknown>));
+    const current = toRecord(rows[0] as Record<string, unknown>);
+    const t = compute(current);
     const { rows: updated } = await tx.execute({
-      sql: `UPDATE contacts SET called = ?, response = ? WHERE id = ? RETURNING ${COLUMNS}`,
-      args: [t.called ? 1 : 0, t.response, id],
+      sql: `UPDATE contacts SET called = ?, called_at = ?, response = ? WHERE id = ? RETURNING ${COLUMNS}`,
+      args: [t.called ? 1 : 0, t.calledAt === undefined ? current.called_at : t.calledAt, t.response, id],
     });
     await tx.commit();
     return toRecord(updated[0] as Record<string, unknown>);

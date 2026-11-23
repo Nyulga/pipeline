@@ -12,6 +12,7 @@ export function makeContact(over: Partial<Contact> = {}): Contact {
     phone: null,
     email: null,
     called: false,
+    calledAt: null,
     response: "enAttente",
     nextFollowUp: null,
     createdAt: "2026-11-19T10:00:00.000Z",

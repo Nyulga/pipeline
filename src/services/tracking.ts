@@ -46,6 +46,19 @@ export function trackingForStage(stage: Stage): Tracking {
   }
 }
 
+/**
+ * La date de l'appel après un changement de suivi : posée quand le contact devient appelé,
+ * gardée tant qu'il le reste (un appel d'avant le lot 10 reste sans date), effacée s'il repasse « À appeler ».
+ */
+export function nextCalledAt(
+  before: Pick<Contact, "called" | "calledAt">,
+  calledAfter: boolean,
+  now: Date,
+): string | null {
+  if (!calledAfter) return null;
+  return before.called ? before.calledAt : now.toISOString();
+}
+
 /** « Accepté » ou « refusé » marque aussi le contact appelé ; « en attente » ne change pas l'appel. */
 export function withResponse(t: Tracking, response: ContactResponse): Tracking {
   return { called: response === "enAttente" ? t.called : true, response };
