@@ -5,6 +5,7 @@ import { CheckIcon, ClockIcon, PhoneIcon, XIcon } from "lucide-react";
 import { setFollowUpAction, setStageAction, type TrackingActionState } from "@/app/actions";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { SAVE_FAILED_MESSAGE, toCallCount } from "@/components/contacts/texts";
+import { telHref } from "@/components/contacts/contact-links";
 import { dismissUndo, showUndo } from "@/components/contacts/undo-toast";
 import { FollowUpBadge, StageBadge, stageStyles } from "@/components/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -33,8 +34,6 @@ const REASON_BADGE: Record<QueueReason, React.ReactNode> = {
   jamaisAppele: <StageBadge stage="aAppeler" />,
 };
 
-/** Le numéro tel qu'un lien `tel:` l'attend : chiffres et « + » seulement. */
-const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 
 /**
  * « À appeler maintenant » : la prochaine personne de la file, et de quoi noter l'appel.

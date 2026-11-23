@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { connection } from "next/server";
+import { contactPanelHref, type HomeParams } from "@/components/contacts/contact-links";
+import { PanelLink } from "@/components/contacts/panel-link";
 import { formatDay } from "@/components/contacts/texts";
 import { FollowUpBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { listDueFollowUps, type DueFollowUp } from "@/services/contacts";
 const TITLE = "À relancer aujourd'hui";
 
 /** La liste « À relancer aujourd'hui », telle qu'affichée. */
-export function DueFollowUpList({ items }: { items: DueFollowUp[] }) {
+export function DueFollowUpList({ items, linkParams = {} }: { items: DueFollowUp[]; linkParams?: HomeParams }) {
   return (
     <section aria-labelledby="a-relancer">
       <Card size="sm">
@@ -24,9 +25,9 @@ export function DueFollowUpList({ items }: { items: DueFollowUp[] }) {
             <ul className="divide-y divide-border">
               {items.map(({ contact: c, state }) => (
                 <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                  <Link href={`/contacts/${c.id}`} className="font-medium hover:underline">
+                  <PanelLink href={contactPanelHref(linkParams, c.id)} className="font-medium hover:underline">
                     {c.name}
-                  </Link>
+                  </PanelLink>
                   {c.company && <span className="text-sm text-muted-foreground">{c.company}</span>}
                   <span className="ml-auto flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Prévue le {formatDay(c.nextFollowUp!)}</span>
@@ -43,9 +44,9 @@ export function DueFollowUpList({ items }: { items: DueFollowUp[] }) {
 }
 
 /** Lue à chaque requête : « aujourd'hui » est calculé au moment où la page est demandée. */
-export async function DueFollowUps() {
+export async function DueFollowUps({ linkParams }: { linkParams?: Promise<HomeParams> }) {
   await connection();
-  return <DueFollowUpList items={await listDueFollowUps(new Date())} />;
+  return <DueFollowUpList items={await listDueFollowUps(new Date())} linkParams={await linkParams} />;
 }
 
 export function DueFollowUpsSkeleton() {

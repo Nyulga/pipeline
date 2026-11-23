@@ -3,6 +3,7 @@
 import { useOptimistic, useRef, useState, useTransition } from "react";
 import { setStageAction, type TrackingActionState } from "@/app/actions";
 import { ContactCard } from "@/components/contacts/contact-card";
+import { contactPanelHref } from "@/components/contacts/contact-links";
 import { StageBoard } from "@/components/contacts/stage-board";
 import { SAVE_FAILED_MESSAGE, contactCount } from "@/components/contacts/texts";
 import { dismissUndo, showUndo } from "@/components/contacts/undo-toast";
@@ -16,7 +17,16 @@ type Patch = { id: string; tracking: Tracking };
 /** Échec inattendu (réseau, base injoignable…) : la page reste là, la carte le signale. */
 const SAVE_FAILED: TrackingActionState = { ok: false, error: SAVE_FAILED_MESSAGE };
 
-export function ContactsView({ contacts }: { contacts: Contact[] }) {
+export function ContactsView({
+  contacts,
+  query = "",
+  stage = null,
+}: {
+  contacts: Contact[];
+  /** Recherche et filtre en cours : gardés dans le lien qui ouvre la fiche. */
+  query?: string;
+  stage?: Stage | null;
+}) {
   // Mise à jour optimiste avec les mêmes règles que le service ; le serveur reste la référence.
   const [optimistic, applyOptimistic] = useOptimistic(contacts, (list: Contact[], p: Patch) =>
     list.map((c) => (c.id === p.id ? { ...c, ...p.tracking } : c)),
@@ -69,7 +79,8 @@ export function ContactsView({ contacts }: { contacts: Contact[] }) {
       contact={c}
       compact={compact}
       error={errors[c.id]}
-      onStageChange={(stage) => changeStage(c, stage)}
+      onStageChange={(next) => changeStage(c, next)}
+      href={contactPanelHref({ q: query, etape: stage }, c.id)}
     />
   );
 

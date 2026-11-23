@@ -1,17 +1,38 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
+import { withoutContact } from "@/components/contacts/contact-links";
+import { ContactPanelView } from "@/components/contacts/contact-panel-view";
 import { AddContactDialog } from "@/components/contacts/add-contact-dialog";
 import { ContactList, ContactListSkeleton } from "@/components/contacts/contact-list";
 import { ContactSearch } from "@/components/contacts/contact-search";
 import { ExportButton } from "@/components/contacts/export-button";
 import { DueFollowUps, DueFollowUpsSkeleton } from "@/components/contacts/due-follow-ups";
 import { Today, TodayGreeting, TodayGreetingSkeleton, TodaySkeleton } from "@/components/contacts/today";
+import { getContactSheet } from "@/services/contact-sheet";
 import { parseStage } from "@/services/tracking";
 
-type SearchParams = Promise<{ q?: string | string[]; etape?: string | string[] }>;
+type SearchParams = Promise<{ q?: string | string[]; etape?: string | string[]; contact?: string | string[] }>;
+
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+/** La fiche par-dessus la liste quand l'adresse porte `?contact=<id>` (lot 9). */
+async function PanelSlot({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const id = first(params.contact);
+  if (!id) return null;
+  await connection();
+  const closeHref = withoutContact({ q: first(params.q), etape: first(params.etape) });
+  return <ContactPanelView sheet={await getContactSheet(id)} closeHref={closeHref} />;
+}
+
+/** Recherche et filtre en cours, gardés par les liens qui ouvrent une fiche. */
+async function linkParamsOf(searchParams: SearchParams) {
+  const params = await searchParams;
+  return { q: first(params.q), etape: first(params.etape) };
+}
 
 async function SearchBox({ searchParams }: { searchParams: SearchParams }) {
   const { q, etape } = await searchParams;
-  const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   return <ContactSearch query={first(q)?.trim() ?? ""} stage={parseStage(first(etape))} />;
 }
 
@@ -33,7 +54,7 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
       </Suspense>
 
       <Suspense fallback={<DueFollowUpsSkeleton />}>
-        <DueFollowUps />
+        <DueFollowUps linkParams={linkParamsOf(searchParams)} />
       </Suspense>
 
       <section aria-labelledby="mes-contacts" className="space-y-4">
@@ -47,6 +68,10 @@ export default function Home({ searchParams }: { searchParams: SearchParams }) {
           <ContactList searchParams={searchParams} />
         </Suspense>
       </section>
+
+      <Suspense fallback={null}>
+        <PanelSlot searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }

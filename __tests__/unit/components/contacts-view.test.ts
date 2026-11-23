@@ -165,6 +165,13 @@ describe("ContactsView : le suivi en un geste (lot 8)", () => {
     expect(card("Bruno")).toBeTruthy();
   });
 
+  it("le nom de chaque contact ouvre son panneau, en gardant la recherche et le filtre (lot 9)", () => {
+    render(createElement(ContactsView, { contacts, query: "nord", stage: "accepte" }));
+    expect(within(card("Ana")).getByRole("link", { name: "Ana" }).getAttribute("href")).toBe(
+      "/?q=nord&etape=accepte&contact=a",
+    );
+  });
+
   it("l'onglet « Par étape » affiche les colonnes avec chaque contact à sa place", async () => {
     render(createElement(ContactsView, { contacts }));
 

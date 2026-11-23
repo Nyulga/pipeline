@@ -86,9 +86,15 @@ describe("ContactCard : vue compacte (revue de la PR #22)", () => {
 });
 
 describe("ContactCard : la fiche (lot 3)", () => {
-  it("le nom mène à la fiche du contact", () => {
+  it("le nom ouvre la fiche dans le panneau (lot 9)", () => {
     show(contact({ id: "abc" }));
-    expect(screen.getByRole("link", { name: "Claire Martin" }).getAttribute("href")).toBe("/contacts/abc");
+    expect(screen.getByRole("link", { name: "Claire Martin" }).getAttribute("href")).toBe("/?contact=abc");
+  });
+
+  it("le lien du panneau peut garder la recherche et le filtre", () => {
+    const onStageChange = vi.fn();
+    render(createElement(ContactCard, { contact: contact({ id: "abc" }), onStageChange, href: "/?q=nord&contact=abc" }));
+    expect(screen.getByRole("link", { name: "Claire Martin" }).getAttribute("href")).toBe("/?q=nord&contact=abc");
   });
 
   it("montre la prochaine relance quand il y en a une", () => {

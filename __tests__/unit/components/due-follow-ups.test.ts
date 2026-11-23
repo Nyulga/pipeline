@@ -23,10 +23,10 @@ describe("DueFollowUpList : « À relancer aujourd'hui » (lot 3)", () => {
     const section = screen.getByRole("region", { name: "À relancer aujourd'hui" });
     const items = within(section).getAllByRole("listitem");
     expect(items).toHaveLength(2);
-    expect(within(items[0]).getByRole("link", { name: "Hugo Petit" }).getAttribute("href")).toBe("/contacts/r");
+    expect(within(items[0]).getByRole("link", { name: "Hugo Petit" }).getAttribute("href")).toBe("/?contact=r");
     expect(within(items[0]).getByText("En retard", { selector: "[data-slot=badge]" })).toBeTruthy();
     expect(within(items[0]).getByText("Prévue le 18 nov. 2026")).toBeTruthy();
-    expect(within(items[1]).getByRole("link", { name: "Claire Martin" }).getAttribute("href")).toBe("/contacts/j");
+    expect(within(items[1]).getByRole("link", { name: "Claire Martin" }).getAttribute("href")).toBe("/?contact=j");
     expect(within(items[1]).getByText("Aujourd'hui", { selector: "[data-slot=badge]" })).toBeTruthy();
   });
 
@@ -34,5 +34,20 @@ describe("DueFollowUpList : « À relancer aujourd'hui » (lot 3)", () => {
     render(createElement(DueFollowUpList, { items: [] }));
     const section = screen.getByRole("region", { name: "À relancer aujourd'hui" });
     expect(within(section).getByText("Personne à relancer aujourd'hui.")).toBeTruthy();
+  });
+});
+
+describe("DueFollowUpList : la fiche s'ouvre dans le panneau (revue de la PR #23)", () => {
+  it("le lien garde la recherche et le filtre", () => {
+    const c = makeContact({ id: "r", name: "Hugo Petit", nextFollowUp: "2026-11-18" });
+    render(
+      createElement(DueFollowUpList, {
+        items: [{ contact: c, state: "enRetard" }],
+        linkParams: { q: "nord", etape: "appeleEnAttente" },
+      }),
+    );
+    expect(screen.getByRole("link", { name: "Hugo Petit" }).getAttribute("href")).toBe(
+      "/?q=nord&etape=appeleEnAttente&contact=r",
+    );
   });
 });
